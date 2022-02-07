@@ -1,3 +1,6 @@
+import gym
+from gym import spaces
+
 import sys
 from random import choices
 from copy import deepcopy
@@ -23,9 +26,10 @@ class StochasticTile:
         return new_action
 
 
-class PartiallyObservableWorld:
-    def __init__(self, world_file_path, force_determinism=False, indicate_slip=False):
-        self.actions = ['up', 'down', 'left', 'right']
+class PartiallyObservableWorld(gym.Env):
+    def __init__(self, world_file_path, force_determinism=False, indicate_slip=False, is_partially_obs=True, max_ep_len=100):
+        self.actions_dict = { 'up':0, 'down':1, 'left':2, 'right':3}
+        self.actions = [0,1,2,3]
 
         self.world, self.abstract_world = None, None
         self.get_world_from_file(world_file_path)
@@ -40,6 +44,9 @@ class PartiallyObservableWorld:
         self.indicate_slip = indicate_slip
         self.last_action_slip = False
 
+        # Indicate whether observations will be abstracted or will they be x-y coordinates
+        self.is_partially_obs = is_partially_obs
+
         if not force_determinism:  # This option exist if you want to make a stochastic env. deterministic
             self.get_rules(world_file_path)
 
@@ -47,7 +54,16 @@ class PartiallyObservableWorld:
         self.player_location = None
         self.goal_location = None
 
+        # Episode lenght
+        self.max_ep_len = max_ep_len
+        self.step_counter = 0
+
         self.construct_world()
+
+        # Action and Observation Space
+        self.one_hot_2_state_map, self.one_hot_2_state_map = None, None
+        self.action_space = spaces.Discrete(4)
+        self.observation_space = spaces.Discrete(self._get_obs_space())
 
     def get_world_from_file(self, world_file_path):
         file = open(world_file_path, 'r')
@@ -93,7 +109,7 @@ class PartiallyObservableWorld:
         rule = rule.replace(" ", '')
         rule_parts = rule.split('-')
         rule_id = rule_parts[0]
-        rule_action = rule_parts[1]
+        rule_action = self.actions_dict[rule_parts[1]]
         rule_mappings = rule_parts[2]
         rule_mappings = rule_mappings.lstrip('[').rstrip(']')
         if rule_id not in self.rules.keys():
@@ -102,11 +118,37 @@ class PartiallyObservableWorld:
         action_prob_pairs = []
         for action_prob in rule_mappings.split(','):
             ap = action_prob.split(':')
-            action = ap[0]
+            action = self.actions_dict[ap[0]]
             prob = float(ap[1])
             action_prob_pairs.append((action, prob))
 
         self.rules[rule_id].add_stochastic_action(rule_action, action_prob_pairs)
+
+    def _get_obs_space(self):
+        self.state_2_one_hot_map = {}
+        counter = 0
+        abstract_symbols = set()
+        world_to_process = self.world if not self.is_partially_obs else self.abstract_world
+        for x, row in enumerate(world_to_process):
+            for y, tile in enumerate(row):
+                if tile not in {'#', 'D'}:
+                    if self.is_partially_obs and tile not in abstract_symbols:
+                        abstract_symbols.add(tile)
+                        self.state_2_one_hot_map[tile] = counter
+                        counter += 1
+                    elif not self.is_partially_obs:
+                        self.state_2_one_hot_map[(x,y)] = counter
+                        counter += 1
+        #for rule in self.rules:
+        #    for item.
+        self.one_hot_2_state_map = {v:k for k, v in self.state_2_one_hot_map.items()}
+        return counter
+
+    def encode(self, state):
+        return self.state_2_one_hot_map[state]
+
+    def decode(self, one_hot_enc):
+        return self.one_hot_2_state_map[one_hot_enc]
 
     def construct_world(self):
         for i, l in enumerate(self.world):
@@ -115,40 +157,64 @@ class PartiallyObservableWorld:
                 self.initial_location = (i, l.index('E'))
                 self.world[self.player_location[0]][self.player_location[1]] = ' '
             if 'G' in l:
-                self.goal_location = [i, l.index('G')]
+                self.goal_location = (i, l.index('G'))
 
         assert self.player_location and self.goal_location
 
     def get_abstraction(self):
         return self.abstract_world[self.player_location[0]][self.player_location[1]]
 
-    def step(self, action, abstract_output=True):
+    def step(self, action):
         assert action in self.actions
 
+        self.step_counter += 1
         new_location = self._get_new_location(action)
         if self.world[new_location[0]][new_location[1]] == '#':
-            return '#'
+            observation = self.get_observation()
+            done = True if self.step_counter >= self.max_ep_len else False
+            return self.encode(observation), 0, done, {}
+            #return '#', 0, False, {}
+
+        if self.world[new_location[0]][new_location[1]] == '*':
+            # TODO update like #
+            return self.encode((new_location[0], new_location[1])), -1, True, {}
+            #return '*', -1, True, {}
 
         # If you open the door, perform that step once more and enter new room
         if self.world[new_location[0]][new_location[1]] == 'D':
             self.player_location = new_location
             new_location = self._get_new_location(action)
 
+        # Update player location
         self.player_location = new_location
-        if abstract_output:
-            if self.indicate_slip and self.last_action_slip:
-                return self.get_abstraction() + '_slip'
-            return self.get_abstraction()
-        return self.player_location
 
-    def render(self):
+        # Reward is reached if goal is reached. This terminates the episode.
+        reward = 1 if self.player_location == self.goal_location else 0
+        done = 1 if reward or self.step_counter >= self.max_ep_len else 0
+        observation = self.get_observation()
+
+        return self.encode(observation), reward, done, {}
+
+    def render(self, mode='human'):
         world_copy = deepcopy(self.world)
         world_copy[self.player_location[0]][self.player_location[1]] = 'E'
         for l in world_copy:
             print("".join(l))
 
+    def get_observation(self):
+        if self.is_partially_obs:
+            if self.indicate_slip and self.last_action_slip:
+                observation = self.get_abstraction() + '_slip'
+            else:
+                observation = self.get_abstraction()
+        else:
+            observation = self.player_location
+        return observation
+
     def reset(self):
+        self.step_counter = 0
         self.player_location = self.initial_location[0], self.initial_location[1]
+        return self.encode(self.get_observation())
 
     def _get_new_location(self, action):
         old_action = action
@@ -157,19 +223,19 @@ class PartiallyObservableWorld:
             action = self.rules[self.stochastic_tile[self.player_location]].get_action(action)
         if old_action != action:
             self.last_action_slip = True
-        if action == 'up':
+        if action == 0: # up
             return self.player_location[0] - 1, self.player_location[1]
-        if action == 'down':
+        if action == 1: # down
             return self.player_location[0] + 1, self.player_location[1]
-        if action == 'left':
+        if action == 2: #left
             return self.player_location[0], self.player_location[1] - 1
-        if action == 'right':
+        if action == 3: #right
             return self.player_location[0], self.player_location[1] + 1
 
     def play(self):
         while True:
             sys.stdout.flush()
             action = input('Action: ')
-            o = self.step(action, abstract_output=True)
+            o = self.step(action)
             self.render()
             print(o)

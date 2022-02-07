@@ -1,7 +1,9 @@
-## World Generation
+# POGE - Partially Observable Gridworld Enviroment 
+
+## World Generation 
 
 Each world/enviroment consists of 3 files:
-- ***<env_name>.txt*** - A layout file. `E` is the starting position, `G` is the goal. Walls are marked by `#`, and doors in the walls by `D`. Once door is reached, last action will be repeated once more, so to pass through the door.
+- ***<env_name>.txt*** - A layout file. `E` is the starting position, `G` is the goal. Walls are marked by `#`, and doors in the walls by `D`. Once door is reached, last action will be repeated once more, so to pass through the door. In addition, `*` can be used as a state/tile that terminates the episode/death state. Reward in state `*` is -1, while reward in the state `G` is 1.
 - ***<env_name>_abstraction.txt*** - File that corresponds to the layout files, but all fields (except for doors and walls), are replaced with their abstract output.
 - ***<env_name>_rules.txt*** - File that contains rules about the stochastic behaviour of the environment. If empty, environment will be deterministic.
 
