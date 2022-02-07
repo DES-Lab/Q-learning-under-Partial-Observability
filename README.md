@@ -5,7 +5,7 @@ Each world/enviroment consists of 3 files:
 - ***<env_name>_abstraction.txt*** - File that corresponds to the layout files, but all fields (except for doors and walls), are replaced with their abstract output.
 - ***<env_name>_rules.txt*** - File that contains rules about the stochastic behaviour of the environment. If empty, environment will be deterministic.
 
-###Example: Office World:
+### Example: Office World:
 - Layout
 ```
 #########
