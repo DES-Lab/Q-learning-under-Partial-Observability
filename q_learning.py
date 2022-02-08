@@ -4,7 +4,7 @@ import gym
 import gym_partially_observable_grid
 import numpy as np
 
-env = gym.make('poge-v1', world_file_path='worlds/world0.txt', force_determinism=False, indicate_slip=False,
+env = gym.make('poge-v1', world_file_path='worlds/world0.txt', force_determinism=False, indicate_slip=True,
                is_partially_obs=True)
 
 q_table = np.zeros([env.observation_space.n, env.action_space.n])

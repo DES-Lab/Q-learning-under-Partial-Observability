@@ -25,6 +25,8 @@ class StochasticTile:
 
         return new_action
 
+    def get_all_actions(self):
+        return list({action_prob_pair[0] for rule in self.behaviour.values() for action_prob_pair in rule})
 
 class PartiallyObservableWorld(gym.Env):
     def __init__(self, world_file_path, force_determinism=False, indicate_slip=False, is_partially_obs=True, max_ep_len=100):
@@ -47,7 +49,8 @@ class PartiallyObservableWorld(gym.Env):
         # Indicate whether observations will be abstracted or will they be x-y coordinates
         self.is_partially_obs = is_partially_obs
 
-        if not force_determinism:  # This option exist if you want to make a stochastic env. deterministic
+        # This option exist if you want to make a stochastic env. deterministic
+        if not force_determinism:
             self.get_rules(world_file_path)
 
         self.initial_location = None
@@ -58,7 +61,8 @@ class PartiallyObservableWorld(gym.Env):
         self.max_ep_len = max_ep_len
         self.step_counter = 0
 
-        self.construct_world()
+        # Get player and goal locations
+        self.get_player_and_goal_positions()
 
         # Action and Observation Space
         self.one_hot_2_state_map, self.one_hot_2_state_map = None, None
@@ -139,18 +143,38 @@ class PartiallyObservableWorld(gym.Env):
                     elif not self.is_partially_obs:
                         self.state_2_one_hot_map[(x,y)] = counter
                         counter += 1
-        #for rule in self.rules:
-        #    for item.
+
+        # add tiles reachable by slip actions to observation space
+        for xy, tile in self.stochastic_tile.items():
+            slip_actions = self.rules[tile].get_all_actions()
+            x,y = xy
+            for slip_act in slip_actions:
+                if slip_act == 0:  # up
+                    x -= 1
+                if slip_act == 1:  # down
+                    x += 1
+                if slip_act == 2:  # left
+                    y -= 1
+                if slip_act == 3:  # right
+                    y += 1
+
+                reached_abstract = f'{self.abstract_world[x][y]}_slip'
+                if self.is_partially_obs and reached_abstract not in abstract_symbols:
+                    abstract_symbols.add(reached_abstract)
+                    self.state_2_one_hot_map[reached_abstract] = counter
+                    counter += 1
+                #  is this needed? Slip for not-partially obs env.
+                # elif not self.is_partially_obs:
+                #     reached_xy = f'{(x, y)}_slip'
+                #     if reached_xy not in self.state_2_one_hot_map.keys():
+                #         self.state_2_one_hot_map[(x, y)] = counter
+                #         counter += 1
+
         self.one_hot_2_state_map = {v:k for k, v in self.state_2_one_hot_map.items()}
         return counter
 
-    def encode(self, state):
-        return self.state_2_one_hot_map[state]
 
-    def decode(self, one_hot_enc):
-        return self.one_hot_2_state_map[one_hot_enc]
-
-    def construct_world(self):
+    def get_player_and_goal_positions(self):
         for i, l in enumerate(self.world):
             if 'E' in l:
                 self.player_location = (i, l.index('E'))
@@ -160,9 +184,6 @@ class PartiallyObservableWorld(gym.Env):
                 self.goal_location = (i, l.index('G'))
 
         assert self.player_location and self.goal_location
-
-    def get_abstraction(self):
-        return self.abstract_world[self.player_location[0]][self.player_location[1]]
 
     def step(self, action):
         assert action in self.actions
@@ -195,12 +216,6 @@ class PartiallyObservableWorld(gym.Env):
 
         return self.encode(observation), reward, done, {}
 
-    def render(self, mode='human'):
-        world_copy = deepcopy(self.world)
-        world_copy[self.player_location[0]][self.player_location[1]] = 'E'
-        for l in world_copy:
-            print("".join(l))
-
     def get_observation(self):
         if self.is_partially_obs:
             if self.indicate_slip and self.last_action_slip:
@@ -210,11 +225,6 @@ class PartiallyObservableWorld(gym.Env):
         else:
             observation = self.player_location
         return observation
-
-    def reset(self):
-        self.step_counter = 0
-        self.player_location = self.initial_location[0], self.initial_location[1]
-        return self.encode(self.get_observation())
 
     def _get_new_location(self, action):
         old_action = action
@@ -232,9 +242,28 @@ class PartiallyObservableWorld(gym.Env):
         if action == 3: #right
             return self.player_location[0], self.player_location[1] + 1
 
+    def encode(self, state):
+        return self.state_2_one_hot_map[state]
+
+    def decode(self, one_hot_enc):
+        return self.one_hot_2_state_map[one_hot_enc]
+
+    def get_abstraction(self):
+        return self.abstract_world[self.player_location[0]][self.player_location[1]]
+
+    def reset(self):
+        self.step_counter = 0
+        self.player_location = self.initial_location[0], self.initial_location[1]
+        return self.encode(self.get_observation())
+
+    def render(self, mode='human'):
+        world_copy = deepcopy(self.world)
+        world_copy[self.player_location[0]][self.player_location[1]] = 'E'
+        for l in world_copy:
+            print("".join(l))
+
     def play(self):
         while True:
-            sys.stdout.flush()
             action = input('Action: ')
             o = self.step(action)
             self.render()
