@@ -66,6 +66,7 @@ class PrismInterface:
              self.adv_file_name, "-exportmodel", f"{self.concrete_model_name}.all"],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=path_to_prism_file)
         for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
+            print(line)
             if not line:
                 break
             else:
