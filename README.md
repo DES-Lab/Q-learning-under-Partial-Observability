@@ -12,14 +12,21 @@ Each world/enviroment consists of 3 files:
 ```
 #########
 #   #   #
-#   D  E#
+# 2 D  E#
 #   #   #
 ##D######
 #   #G  #
-#   D   #
+# 4 D   #
 #   #   #
 #########
 ```
+
+Intermediate rewards can be declared by assigning an integer to a tile. Then the reward of the tile will equal to the integer value found in it.
+If `one_time_rewards` param is set to True (by default it is), then the reward for each tile will be received once per episode. 
+Else it will be received every time player is on the reward tile.
+
+Limitation: intermediate rewards can only be integers in range [1-9].
+
 - Abstraction
 ```
 #########
@@ -32,6 +39,11 @@ Each world/enviroment consists of 3 files:
 #333#444#
 #########
 ```
+
+If `is_partially_obs` parameter is set to True, instead of observing x and y coordinates, a value found on the tile will be returned. 
+If tile is left empty, (x,y) coordinates will be returned.
+
+Limitation: Abstraction values are upper or lower case characters or integers in range [0-9].
 - Rules
 
 To add stochastic behaviour to the environment we create "rules". Each tile of the enviroment can be assigned to single (or no) rule.
