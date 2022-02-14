@@ -1,0 +1,10 @@
+########
+# 1231 #
+########
+
+1-left-[left:0.8, right:0.2]
+1-right-[right:0.75, left:0.25]
+2-left-[left:0.6, right:0.4]
+2-right-[right:0.85, left:0.15]
+3-left-[left:0.5, right:0.5]
+3-right-[right:0.75, left:0.25]
