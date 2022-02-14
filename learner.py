@@ -63,8 +63,10 @@ else:
     learned_model = load_automaton_from_file('approximate_model.dot', automaton_type='smm')
 
 learned_model_mdp = smm_to_mdp_conversion(learned_model)
+
 for s in learned_model_mdp.states:
-    s.output = str(s.output)
+    if str(s.output).isdigit():
+        s.output = f's_{s.output}'
 
 prism_interface = PrismInterface("GOAL", learned_model_mdp)
 

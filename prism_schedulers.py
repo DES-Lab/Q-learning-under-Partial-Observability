@@ -1,7 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 
-import aalpy
+import aalpy.paths
 from aalpy.utils import mdp_2_prism_format
 
 
@@ -15,13 +15,12 @@ class PrismInterface:
         self.current_state = None
         self.tmp_dir.mkdir(exist_ok=True)
         self.prism_property = self.create_mc_query()
-        mdp_2_prism_format(self.model, "porl", output_path = self.tmp_mdp_file)
+        mdp_2_prism_format(self.model, "porl", output_path=self.tmp_mdp_file)
         self.adv_file_name = (self.tmp_dir.absolute() / f"sched_{dest}.adv")
         self.concrete_model_name = str(self.tmp_dir.absolute() / f"concrete_model_{dest}")
         self.call_prism()
-        self.parser = PrismSchedulerParser(self.adv_file_name,self.concrete_model_name + ".lab",
+        self.parser = PrismSchedulerParser(self.adv_file_name, self.concrete_model_name + ".lab",
                                            self.concrete_model_name + ".tra")
-
 
     def create_mc_query(self):
         prop = f"Pmax=?[F \"{self.dest}\"]"
@@ -41,10 +40,10 @@ class PrismInterface:
     def reset(self):
         self.current_state = self.parser.initial_state
 
-    def step_to(self,input,output):
+    def step_to(self, input, output):
         trans_from_current = self.parser.transition_dict[self.current_state]
         found_state = False
-        for (prob,action,target_state) in trans_from_current:
+        for (prob, action, target_state) in trans_from_current:
             if action == input and output in self.parser.label_dict[target_state]:
                 self.current_state = target_state
                 found_state = True
@@ -64,14 +63,14 @@ class PrismInterface:
         proc = subprocess.Popen(
             [aalpy.paths.path_to_prism, file_abs_path, "-pf", self.prism_property, "-noprob1", "-exportadvmdp",
              self.adv_file_name, "-exportmodel", f"{self.concrete_model_name}.all"],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=path_to_prism_file)
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=path_to_prism_file, shell=True)
         for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
             print(line)
             if not line:
                 break
             else:
                 if "Result:" in line:
-                    end_index = len(line) if "exact" not in line else line.index("(")-1
+                    end_index = len(line) if "exact" not in line else line.index("(") - 1
                     try:
                         result_val = float(line[len("Result: "): end_index])
                         if result_val < 1.0:
