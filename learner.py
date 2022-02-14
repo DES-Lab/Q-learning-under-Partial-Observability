@@ -24,7 +24,17 @@ class StochasticWorldSUL(SUL):
         return self.world.decode(output)
 
 
-world = gym.make('poge-v1', world_file_path='worlds/world0.txt', force_determinism=False, indicate_slip=False, is_partially_obs=True)
+# Make environment deterministic even if it is stochastic
+force_determinism = False
+# Add slip to the observation set (action failed)
+indicate_slip = False
+# Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
+is_partially_obs = True
+
+world = gym.make('poge-v1', world_file_path='worlds/world0.txt',
+                 force_determinism=force_determinism,
+                 indicate_slip=indicate_slip,
+                 is_partially_obs=is_partially_obs)
 
 input_al = list(world.actions_dict.keys())
 

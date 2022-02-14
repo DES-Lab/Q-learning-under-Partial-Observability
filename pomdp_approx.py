@@ -37,6 +37,6 @@ input_al = mdp.get_input_alphabet()
 sul = MdpSUL(mdp)
 eq_oracle = RandomWalkEqOracle(input_al, sul)
 
-learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='mdp', min_rounds=200, strategy='chi2')
+learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='mdp', min_rounds=100, strategy='chi2')
 
 visualize_automaton(learned_model)
