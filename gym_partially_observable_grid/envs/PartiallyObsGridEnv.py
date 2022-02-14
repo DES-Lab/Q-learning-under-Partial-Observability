@@ -29,7 +29,14 @@ class StochasticTile:
         return list({action_prob_pair[0] for rule in self.behaviour.values() for action_prob_pair in rule})
 
 class PartiallyObservableWorld(gym.Env):
-    def __init__(self, world_file_path, force_determinism=False, indicate_slip=False, is_partially_obs=True, max_ep_len=100):
+    def __init__(self,
+                 world_file_path,
+                 force_determinism=False,
+                 indicate_slip=False,
+                 is_partially_obs=True,
+                 max_ep_len=100,
+                 goal_reward=10,
+                 one_time_rewards=True):
         self.actions_dict = { 'up':0, 'down':1, 'left':2, 'right':3}
         self.actions = [0,1,2,3]
 
@@ -40,6 +47,11 @@ class PartiallyObservableWorld(gym.Env):
         self.rules = dict()
         # Map of locations to rule_ids, that is, tile has stochastic behaviour
         self.stochastic_tile = dict()
+        # Map of locations that return a reward
+        self.reward_tiles = dict()
+        # If one_time_rewards set to True, reward for that tile will be receive only once during the episode
+        self.one_time_rewards = one_time_rewards
+        self.collected_rewards = set()
 
         # If true, once the executed action is not the same as the desired action,
         # 'slip' will be added to abstract output
@@ -57,12 +69,17 @@ class PartiallyObservableWorld(gym.Env):
         self.player_location = None
         self.goal_location = None
 
+        # Reward reached when reaching goal
+        self.goal_reward = goal_reward
+
         # Episode lenght
         self.max_ep_len = max_ep_len
         self.step_counter = 0
 
         # Get player and goal locations
         self.get_player_and_goal_positions()
+        # Get rewards
+        self._get_rewards()
 
         # Action and Observation Space
         self.one_hot_2_state_map, self.one_hot_2_state_map = None, None
@@ -79,6 +96,12 @@ class PartiallyObservableWorld(gym.Env):
         file = open(abstraction_path, 'r')
         self.abstract_world = [list(l.strip()) for l in file.readlines()]
         file.close()
+
+    def _get_rewards(self):
+        for x, line in enumerate(self.world):
+            for y, tile in enumerate(line):
+                if tile.isdigit():
+                    self.reward_tiles[(x,y)] = int(tile)
 
     def get_rules(self, world_file_path):
         rules_path = world_file_path.split('.txt')
@@ -140,35 +163,33 @@ class PartiallyObservableWorld(gym.Env):
                         abstract_symbols.add(tile)
                         self.state_2_one_hot_map[tile] = counter
                         counter += 1
+                    if self.is_partially_obs and tile == ' ':
+                        self.state_2_one_hot_map[(x,y)] = counter
+                        counter += 1
                     elif not self.is_partially_obs:
                         self.state_2_one_hot_map[(x,y)] = counter
                         counter += 1
 
         # add tiles reachable by slip actions to observation space
-        for xy, tile in self.stochastic_tile.items():
-            slip_actions = self.rules[tile].get_all_actions()
-            x,y = xy
-            for slip_act in slip_actions:
-                if slip_act == 0:  # up
-                    x -= 1
-                if slip_act == 1:  # down
-                    x += 1
-                if slip_act == 2:  # left
-                    y -= 1
-                if slip_act == 3:  # right
-                    y += 1
+        if self.indicate_slip:
+            for xy, tile in self.stochastic_tile.items():
+                slip_actions = self.rules[tile].get_all_actions()
+                x,y = xy
+                for slip_act in slip_actions:
+                    if slip_act == 0:  # up
+                        x -= 1
+                    if slip_act == 1:  # down
+                        x += 1
+                    if slip_act == 2:  # left
+                        y -= 1
+                    if slip_act == 3:  # right
+                        y += 1
 
-                reached_abstract = f'{self.abstract_world[x][y]}_slip'
-                if self.is_partially_obs and reached_abstract not in abstract_symbols:
-                    abstract_symbols.add(reached_abstract)
-                    self.state_2_one_hot_map[reached_abstract] = counter
-                    counter += 1
-                #  is this needed? Slip for not-partially obs env.
-                # elif not self.is_partially_obs:
-                #     reached_xy = f'{(x, y)}_slip'
-                #     if reached_xy not in self.state_2_one_hot_map.keys():
-                #         self.state_2_one_hot_map[(x, y)] = counter
-                #         counter += 1
+                    reached_abstract = f'{self.abstract_world[x][y]}_slip'
+                    if self.is_partially_obs and reached_abstract not in abstract_symbols:
+                        abstract_symbols.add(reached_abstract)
+                        self.state_2_one_hot_map[reached_abstract] = counter
+                        counter += 1
 
         self.one_hot_2_state_map = {v:k for k, v in self.state_2_one_hot_map.items()}
         return counter
@@ -198,7 +219,7 @@ class PartiallyObservableWorld(gym.Env):
 
         if self.world[new_location[0]][new_location[1]] == '*':
             # TODO update like #
-            return self.encode((new_location[0], new_location[1])), -1, True, {}
+            return self.encode((new_location[0], new_location[1])), -self.goal_reward, True, {}
             #return '*', -1, True, {}
 
         # If you open the door, perform that step once more and enter new room
@@ -210,8 +231,18 @@ class PartiallyObservableWorld(gym.Env):
         self.player_location = new_location
 
         # Reward is reached if goal is reached. This terminates the episode.
-        reward = 1 if self.player_location == self.goal_location else 0
-        done = 1 if reward or self.step_counter >= self.max_ep_len else 0
+        reward = 0
+        if self.player_location in self.reward_tiles.keys():
+            if self.one_time_rewards and self.player_location not in self.collected_rewards:
+                reward = self.reward_tiles[self.player_location]
+            elif not self.one_time_rewards:
+                reward = self.reward_tiles[self.player_location]
+            self.collected_rewards.add(self.player_location)
+
+        if self.player_location == self.goal_location:
+            reward = self.goal_reward
+
+        done = 1 if self.player_location == self.goal_location or self.step_counter >= self.max_ep_len else 0
         observation = self.get_observation()
 
         return self.encode(observation), reward, done, {}
@@ -249,11 +280,16 @@ class PartiallyObservableWorld(gym.Env):
         return self.one_hot_2_state_map[one_hot_enc]
 
     def get_abstraction(self):
-        return self.abstract_world[self.player_location[0]][self.player_location[1]]
+        abstract_tile = self.abstract_world[self.player_location[0]][self.player_location[1]]
+        if abstract_tile != ' ':
+            return self.abstract_world[self.player_location[0]][self.player_location[1]]
+        else:
+            return self.player_location
 
     def reset(self):
         self.step_counter = 0
         self.player_location = self.initial_location[0], self.initial_location[1]
+        self.collected_rewards.clear()
         return self.encode(self.get_observation())
 
     def render(self, mode='human'):
@@ -263,8 +299,9 @@ class PartiallyObservableWorld(gym.Env):
             print("".join(l))
 
     def play(self):
+        self.reset()
         while True:
-            action = input('Action: ')
+            action = int(input('Action (up:0, down:1, left:2, right:3}): '))
             o = self.step(action)
             self.render()
             print(o)

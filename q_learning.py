@@ -7,11 +7,11 @@ import numpy as np
 # Make environment deterministic even if it is stochastic
 force_determinism = False
 # Add slip to the observation set (action failed)
-indicate_slip = False
+indicate_slip = True
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = False
+is_partially_obs = True
 
-env = gym.make('poge-v1', world_file_path='worlds/world1.txt',
+env = gym.make('poge-v1', world_file_path='worlds/world0.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs)
@@ -23,11 +23,13 @@ alpha = 0.1
 gamma = 0.6
 epsilon = 0.1
 
+num_training_episodes = 10000
+
 # For plotting metrics
 all_epochs = []
 all_penalties = []
 
-for i in range(1, 10000):
+for i in range(1, num_training_episodes + 1):
     state = env.reset()
 
     epochs, penalties, reward, = 0, 0, 0
@@ -75,7 +77,7 @@ for _ in range(episodes):
 
         if reward == -1:
             penalties += 1
-        if reward == 1:
+        if reward and done:
             goals_reached += 1
 
         epochs += 1
