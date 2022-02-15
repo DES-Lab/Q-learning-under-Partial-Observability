@@ -76,7 +76,7 @@ class PrismInterface:
                 print(line)
             else:
                 if "Result:" in line:
-                    end_index = len(line) if "+/-" not in line else line.index("(") - 1
+                    end_index = len(line) if "(" not in line else line.index("(") - 1
                     try:
                         result_val = float(line[len("Result: "): end_index])
                         # if result_val < 1.0:

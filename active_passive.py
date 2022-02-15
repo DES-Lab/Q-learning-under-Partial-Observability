@@ -38,8 +38,9 @@ class StochasticWorldSUL(SUL):
         if done:
             return "EP_END"
         output = self.world.decode(output)
-        if str(output).isdigit():
-            output = f's{output}'
+        if isinstance(output, tuple):
+            output = f'{output[0]}_{output[1]}'
+        output = f's{output}'
         return output
 
 
@@ -55,7 +56,11 @@ class EpsGreedySampler(Sampler):
         new_data = []
 
         prism_interface = PrismInterface("GOAL", model)
-        completely_random = True if prism_interface.property_val < 0.5 else False
+        completely_random = False
+        if prism_interface.property_val is not None:
+            completely_random = True if prism_interface.property_val < 0.5 else False # TODO WTF SHOULD BE SYNCHRONOUS
+        else:
+            print('REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
 
         for _ in range(self.new_samples):
             sample = ['Init']
