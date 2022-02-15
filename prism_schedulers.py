@@ -34,7 +34,7 @@ class PrismInterface:
             return None
         else:
             # print("Current state is not none")
-            if self.current_state not in (self).parser.scheduler_dict:
+            if self.current_state not in self.parser.scheduler_dict:
                 return None
             return self.parser.scheduler_dict[self.current_state]
 

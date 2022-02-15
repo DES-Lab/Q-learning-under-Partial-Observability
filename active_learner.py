@@ -19,7 +19,7 @@ indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
 is_partially_obs = True  # prism will not work with False (need to fix touple type)
 
-world = gym.make('poge-v1', world_file_path='worlds/world1.txt',
+world = gym.make('poge-v1', world_file_path='worlds/world2.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs)

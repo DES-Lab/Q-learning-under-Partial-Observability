@@ -41,18 +41,17 @@ class EpsGreedySampler(Sampler):
 
         reward_states = list(reward_states)
 
-        if not reward_states:
-            reward_states.append('dummy')  # Completely random exploration
-
         schedulers = {rs: PrismInterface(rs, model) for rs in reward_states}
 
         # print(reward_states)
         # print([s for s in schedulers.keys()])
         # print(self.scheduler_freq_counter)
 
+
         for _ in range(self.new_samples):
             # select a scheduler according to the inverse frequency distribution -> less used schedulers will be
             # sampled more
+
             reward_state = random.choices(list(self.scheduler_freq_counter.keys()),
                                           [1 / v for v in self.scheduler_freq_counter.values()], k=1)[0]
             scheduler = schedulers[reward_state]
@@ -112,7 +111,7 @@ is_partially_obs = True
 
 min_seq_len, max_seq_len = 20, 50
 
-world = gym.make('poge-v1', world_file_path='worlds/world1.txt',
+world = gym.make('poge-v1', world_file_path='worlds/world2.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs,
