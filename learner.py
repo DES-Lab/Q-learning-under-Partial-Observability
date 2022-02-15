@@ -55,7 +55,7 @@ input_al = list(world.actions_dict.keys())
 sul = StochasticWorldSUL(world)
 eq_oracle = RandomWordEqOracle(input_al, sul, num_walks=1000, min_walk_len=5, max_walk_len=30)
 
-learn = False
+learn = True
 
 if learn:
     # learned_model = run_Lstar(input_al, sul, eq_oracle, 'mealy')

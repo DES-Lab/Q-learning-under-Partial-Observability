@@ -82,23 +82,6 @@ class EpsGreedySampler(Sampler):
         return new_data
 
 
-# Make environment deterministic even if it is stochastic
-force_determinism = False
-# Add slip to the observation set (action failed)
-indicate_slip = False
-# Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = True
-
-world = gym.make('poge-v1', world_file_path='worlds/world1.txt',
-                 force_determinism=force_determinism,
-                 indicate_slip=indicate_slip,
-                 is_partially_obs=is_partially_obs)
-
-input_al = list(world.actions_dict.keys())
-
-sul = StochasticWorldSUL(world)
-
-
 def get_initial_data(sul, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50):
     random_samples = []
     for _ in range(initial_sample_num):
@@ -145,7 +128,23 @@ def test_model(model, sul, input_al, num_episodes, max_ep_len=100):
     print(f'Avg. step count : {mean(num_steps_per_ep)}')
 
 
-data = get_initial_data(sul, input_al)
+# Make environment deterministic even if it is stochastic
+force_determinism = False
+# Add slip to the observation set (action failed)
+indicate_slip = False
+# Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
+is_partially_obs = True
+
+world = gym.make('poge-v1', world_file_path='worlds/world1.txt',
+                 force_determinism=force_determinism,
+                 indicate_slip=indicate_slip,
+                 is_partially_obs=is_partially_obs)
+
+input_al = list(world.actions_dict.keys())
+
+sul = StochasticWorldSUL(world)
+
+data = get_initial_data(sul, input_al, initial_sample_num=10000)
 
 sampler = EpsGreedySampler(input_al, num_new_samples=2000)
 
