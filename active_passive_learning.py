@@ -47,22 +47,25 @@ class EpsGreedySampler(Sampler):
         # print([s for s in schedulers.keys()])
         # print(self.scheduler_freq_counter)
 
-
+        print(reward_states)
         for _ in range(self.new_samples):
             # select a scheduler according to the inverse frequency distribution -> less used schedulers will be
             # sampled more
 
-            reward_state = random.choices(list(self.scheduler_freq_counter.keys()),
-                                          [1 / v for v in self.scheduler_freq_counter.values()], k=1)[0]
-            scheduler = schedulers[reward_state]
-            self.scheduler_freq_counter[reward_state] += 1
-
-            completely_random = True if scheduler.property_val < 0.5 else False
+            ignore_scheduler = True if reward_states is None else False
+            scheduler = None
+            if not ignore_scheduler:
+                reward_state = random.choices(list(self.scheduler_freq_counter.keys()),
+                                              [1 / v for v in self.scheduler_freq_counter.values()], k=1)[0]
+                scheduler = schedulers[reward_state]
+                self.scheduler_freq_counter[reward_state] += 1
+                ignore_scheduler = True if scheduler.property_val < 0.5 else False
 
             sample = ['Init']
             sul.pre()
-            scheduler.reset()
-            continue_random = completely_random
+            if not ignore_scheduler:
+                scheduler.reset()
+            continue_random = ignore_scheduler
             for _ in range(random.randint(self.min_seq_len, self.max_seq_len)):
                 if not continue_random and random.random() < self.eps:
                     i = scheduler.get_input()
@@ -73,12 +76,13 @@ class EpsGreedySampler(Sampler):
                     i = random.choice(self.input_al)
 
                 o = sul.step(i)
-                sample.append((i, o))
+                if ignore_scheduler:
+                    sample.append((i, o))
                 if o == 'GOAL':
                     break
 
                 # once reward state is reached, continue doing completely random sampling
-                if not continue_random:
+                if not continue_random and not ignore_scheduler:
                     continue_random = True if o == scheduler.dest else not scheduler.step_to(i, o)
 
             sul.post()
@@ -111,7 +115,7 @@ is_partially_obs = True
 
 min_seq_len, max_seq_len = 20, 50
 
-world = gym.make('poge-v1', world_file_path='worlds/world2.txt',
+world = gym.make('poge-v1', world_file_path='worlds/world3.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs,
