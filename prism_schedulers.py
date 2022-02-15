@@ -19,7 +19,7 @@ class PrismInterface:
         mdp_2_prism_format(self.model, "porl", output_path=self.tmp_mdp_file)
         self.adv_file_name = (self.tmp_dir.absolute() / f"sched_{dest}.adv")
         self.concrete_model_name = str(self.tmp_dir.absolute() / f"concrete_model_{dest}")
-        self.property_val = None
+        self.property_val = 0
         self.call_prism()
         self.parser = PrismSchedulerParser(self.adv_file_name, self.concrete_model_name + ".lab",
                                            self.concrete_model_name + ".tra")
@@ -56,17 +56,26 @@ class PrismInterface:
 
     def call_prism(self):
         import subprocess
-        import io
         from os import path
+
+        self.property_val = 0
+
+        dest_in_model=False
+        for s in self.model.states:
+            if s.output == self.dest:
+                dest_in_model = True
+                break
+
+        if not dest_in_model:
+            return self.property_val
 
         prism_file = aalpy.paths.path_to_prism.split('/')[-1]
         path_to_prism_file = aalpy.paths.path_to_prism[:-len(prism_file)]
         file_abs_path = path.abspath(self.tmp_mdp_file)
-        results = []
         proc = subprocess.Popen(
             [aalpy.paths.path_to_prism, file_abs_path, "-pf", self.prism_property, "-noprob1", "-exportadvmdp",
              self.adv_file_name, "-exportmodel", f"{self.concrete_model_name}.all"],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=path_to_prism_file, shell=True)
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=path_to_prism_file)
         out = proc.communicate()[0]
         out = out.decode('utf-8').splitlines()
         for line in out:
@@ -78,16 +87,13 @@ class PrismInterface:
                 if "Result:" in line:
                     end_index = len(line) if "(" not in line else line.index("(") - 1
                     try:
-                        result_val = float(line[len("Result: "): end_index])
+                        self.property_val = float(line[len("Result: "): end_index])
                         # if result_val < 1.0:
                         #    print(f"We cannot reach with absolute certainty, probability is {result_val}")
-                        results.append(result_val)
                     except:
                         print("Result parsing error")
         proc.kill()
-        if len(results) == 1:
-            self.property_val = results[0]
-        return results
+        return self.property_val
 
 
 class PrismSchedulerParser:

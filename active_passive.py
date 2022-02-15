@@ -56,11 +56,7 @@ class EpsGreedySampler(Sampler):
         new_data = []
 
         prism_interface = PrismInterface("GOAL", model)
-        completely_random = False
-        if prism_interface.property_val is not None:
-            completely_random = True if prism_interface.property_val < 0.5 else False # TODO WTF SHOULD BE SYNCHRONOUS
-        else:
-            print('REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
+        completely_random = True if prism_interface.property_val < 0.5 else False
 
         for _ in range(self.new_samples):
             sample = ['Init']
