@@ -52,6 +52,8 @@ class PrismInterface:
         if not found_state:
             self.current_state = None
 
+        return found_state
+
     def call_prism(self):
         import subprocess
         import io
@@ -70,9 +72,11 @@ class PrismInterface:
         for line in out:
             if not line:
                 continue
+            if 'Syntax error' in line:
+                print(line)
             else:
                 if "Result:" in line:
-                    end_index = len(line) if "exact" not in line else line.index("(") - 1
+                    end_index = len(line) if "+/-" not in line else line.index("(") - 1
                     try:
                         result_val = float(line[len("Result: "): end_index])
                         # if result_val < 1.0:

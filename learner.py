@@ -12,6 +12,7 @@ from prism_schedulers import PrismInterface
 
 aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
+
 class StochasticWorldSUL(SUL):
     def __init__(self, stochastic_world):
         super().__init__()
@@ -29,9 +30,11 @@ class StochasticWorldSUL(SUL):
         if letter is None:
             return world.get_abstraction()
         output, reward, done, info = self.world.step(world.actions_dict[letter])
-        if done or self.goal_reached:
+        if reward == self.world.goal_reward or self.goal_reached:
             self.goal_reached = True
             return "GOAL"
+        if done:
+            return "EP_END"
         return self.world.decode(output)
 
 
@@ -57,7 +60,7 @@ learn = False
 if learn:
     # learned_model = run_Lstar(input_al, sul, eq_oracle, 'mealy')
     learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='smm', max_rounds=15)
-    #visualize_automaton(learned_model)
+    # visualize_automaton(learned_model)
     save_automaton_to_file(learned_model, 'approximate_model')
 else:
     learned_model = load_automaton_from_file('approximate_model.dot', automaton_type='smm')
