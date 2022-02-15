@@ -33,19 +33,22 @@ class StochasticWorldSUL(SUL):
         if reward == self.world.goal_reward or self.goal_reached:
             self.goal_reached = True
             return "GOAL"
+        output = self.world.decode(output)
         if done:
             return "EP_END"
-        return self.world.decode(output)
+        if reward > 0:
+            output = f'{output}_{reward}'
+        return output
 
 
 # Make environment deterministic even if it is stochastic
-force_determinism = False
+force_determinism = True
 # Add slip to the observation set (action failed)
 indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = True
+is_partially_obs = True # prism will not work with False (need to fix touple type)
 
-world = gym.make('poge-v1', world_file_path='worlds/world1.txt',
+world = gym.make('poge-v1', world_file_path='worlds/world0.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs)
