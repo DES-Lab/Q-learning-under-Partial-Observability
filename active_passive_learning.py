@@ -52,7 +52,7 @@ class EpsGreedySampler(Sampler):
             # select a scheduler according to the inverse frequency distribution -> less used schedulers will be
             # sampled more
 
-            ignore_scheduler = True if reward_states is None else False
+            ignore_scheduler = True if len(reward_states) == 0 else False
             scheduler = None
             if not ignore_scheduler:
                 reward_state = random.choices(list(self.scheduler_freq_counter.keys()),
@@ -115,7 +115,7 @@ is_partially_obs = True
 
 min_seq_len, max_seq_len = 20, 50
 
-world = gym.make('poge-v1', world_file_path='worlds/world3.txt',
+world = gym.make('poge-v1', world_file_path='worlds/world2.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs,
@@ -125,7 +125,7 @@ input_al = list(world.actions_dict.keys())
 
 sul = StochasticWorldSUL(world)
 
-data = get_initial_data(sul, input_al, initial_sample_num=5000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+data = get_initial_data(sul, input_al, initial_sample_num=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
 sampler = EpsGreedySampler(input_al, eps=0.8, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 

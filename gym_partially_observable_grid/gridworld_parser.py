@@ -37,6 +37,8 @@ class PartiallyObsGridworldParser:
         self.stochastic_tile = dict()
         # Map of locations that return a reward
         self.reward_tiles = dict()
+        # Map of symbols to rewards
+        self.symbol_reward_map = dict()
 
         # Variables
         self.initial_location = None
@@ -57,9 +59,13 @@ class PartiallyObsGridworldParser:
             line = line.strip()
             if not line:
                 continue
+            is_header = False
             for section_name in sections:
                 if section_name in line:
                     current_section = section_name
+                    is_header = True
+            if is_header:
+                continue
 
             self.content[current_section].append(line)
 
@@ -79,10 +85,18 @@ class PartiallyObsGridworldParser:
         assert self.player_location and self.goal_location
 
     def _parse_rewards(self):
-        for x, line in enumerate(self.world):
-            for y, tile in enumerate(line):
-                if tile.isdigit():
-                    self.reward_tiles[(x, y)] = int(tile)
+        for x, line in enumerate(self.content['Rewards']):
+            if x <= len(self.world) - 1:
+                for y, tile in enumerate(line):
+                    if tile not in {'#', 'D', 'G', ' '}:
+                        self.reward_tiles[(x, y)] = tile
+            else:
+                symbol_value_pair = line.split(':')
+                symbol, value = symbol_value_pair[0], symbol_value_pair[1]
+                self.symbol_reward_map[symbol] = int(value)
+
+        for k, v in self.reward_tiles.items():
+            self.reward_tiles[k] = self.symbol_reward_map[v]
 
     def _parse_rules(self):
 
@@ -90,7 +104,7 @@ class PartiallyObsGridworldParser:
         rule_world = []
         for index, line in enumerate(self.content['Behaviour']):
             # First part of the rules section corresponds to a map
-            if index <= len(self.world):
+            if index <= len(self.world) - 1:
                 rule_world.append(line)
             else:
                 self._parse_and_process_rule(line)

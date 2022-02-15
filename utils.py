@@ -34,7 +34,9 @@ class StochasticWorldSUL(SUL):
         output = self.world.decode(output)
         if isinstance(output, tuple):
             output = f'{output[0]}_{output[1]}'
-        output = f's{output}' if reward == 0 else f's{output}_r_{int(reward)}'
+        if reward != 0:
+            reward = reward if reward > 0 else f'neg_{reward * -1}'
+        output = f's{output}' if reward == 0 else f's{output}_r_{reward}'
         return output
 
 
