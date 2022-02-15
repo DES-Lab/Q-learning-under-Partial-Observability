@@ -68,6 +68,8 @@ for s in learned_model_mdp.states:
     if str(s.output).isdigit():
         s.output = f's_{s.output}'
 
-prism_interface = PrismInterface("GOAL", learned_model_mdp)
+prism_interface = PrismInterface("GOAL", learned_model_mdp, num_steps=17)
 
 print(prism_interface.create_mc_query())
+
+print(prism_interface.property_val)

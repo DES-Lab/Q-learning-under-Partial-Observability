@@ -6,10 +6,11 @@ from aalpy.utils import mdp_2_prism_format
 
 
 class PrismInterface:
-    def __init__(self, dest, model):
+    def __init__(self, dest, model, num_steps=None):
         self.tmp_dir = Path("tmp_prism")
         self.dest = dest
         self.model = model
+        self.num_steps = num_steps
         self.tmp_mdp_file = (self.tmp_dir / f"po_rl_{dest}.prism")
         # self.tmp_prop_file = f"{self.tmp_dir_name}/po_rl.props"
         self.current_state = None
@@ -18,13 +19,13 @@ class PrismInterface:
         mdp_2_prism_format(self.model, "porl", output_path=self.tmp_mdp_file)
         self.adv_file_name = (self.tmp_dir.absolute() / f"sched_{dest}.adv")
         self.concrete_model_name = str(self.tmp_dir.absolute() / f"concrete_model_{dest}")
+        self.property_val = None
         self.call_prism()
         self.parser = PrismSchedulerParser(self.adv_file_name, self.concrete_model_name + ".lab",
                                            self.concrete_model_name + ".tra")
 
     def create_mc_query(self):
-        prop = f"Pmax=?[F \"{self.dest}\"]"
-        print(prop)
+        prop = f"Pmax=?[F \"{self.dest}\"]" if not self.num_steps else f'Pmax=?[F<{self.num_steps} \"{self.dest}\"]'
         return prop
 
     def get_input(self):
@@ -59,25 +60,29 @@ class PrismInterface:
         prism_file = aalpy.paths.path_to_prism.split('/')[-1]
         path_to_prism_file = aalpy.paths.path_to_prism[:-len(prism_file)]
         file_abs_path = path.abspath(self.tmp_mdp_file)
-        results = {}
+        results = []
         proc = subprocess.Popen(
             [aalpy.paths.path_to_prism, file_abs_path, "-pf", self.prism_property, "-noprob1", "-exportadvmdp",
              self.adv_file_name, "-exportmodel", f"{self.concrete_model_name}.all"],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=path_to_prism_file, shell=True)
-        for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
-            print(line)
+        out = proc.communicate()[0]
+        out = out.decode('utf-8').splitlines()
+        for line in out:
             if not line:
-                break
+                continue
             else:
                 if "Result:" in line:
                     end_index = len(line) if "exact" not in line else line.index("(") - 1
                     try:
                         result_val = float(line[len("Result: "): end_index])
-                        if result_val < 1.0:
-                            print(f"We cannot reach with absolute certainty, probability is {result_val}")
+                        # if result_val < 1.0:
+                        #    print(f"We cannot reach with absolute certainty, probability is {result_val}")
+                        results.append(result_val)
                     except:
                         print("Result parsing error")
         proc.kill()
+        if len(results) == 1:
+            self.property_val = results[0]
         return results
 
 
