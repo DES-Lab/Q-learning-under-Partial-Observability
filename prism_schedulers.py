@@ -67,6 +67,7 @@ class PrismInterface:
                 break
 
         if not dest_in_model:
+            print('SCHEDULER NOT COMPUTED')
             return self.property_val
 
         prism_file = aalpy.paths.path_to_prism.split('/')[-1]

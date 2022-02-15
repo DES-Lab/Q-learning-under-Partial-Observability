@@ -2,6 +2,6 @@
 #CCAAAAAAG#
 #CCACBB#GG#
 #CABA###CB#
-#CA#ABC#CA#
-#BA#BCA#BB#
+#CC#ABB#AG#
+#AC#ACCABB#
 ###########
