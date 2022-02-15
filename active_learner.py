@@ -13,13 +13,13 @@ from utils import test_model, StochasticWorldSUL
 aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
 # Make environment deterministic even if it is stochastic
-force_determinism = True
+force_determinism = False
 # Add slip to the observation set (action failed)
-indicate_slip = False
+indicate_slip = True
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
 is_partially_obs = True  # prism will not work with False (need to fix touple type)
 
-world = gym.make('poge-v1', world_file_path='worlds/world2.txt',
+world = gym.make('poge-v1', world_file_path='worlds/world0.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs)
