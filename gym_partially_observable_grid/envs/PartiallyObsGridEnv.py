@@ -1,8 +1,9 @@
 from copy import deepcopy
 
 import gym
-from gridworld_parser import PartiallyObsGridworldParser
 from gym import spaces
+
+from gym_partially_observable_grid.gridworld_parser import PartiallyObsGridworldParser
 
 
 class PartiallyObservableWorld(gym.Env):

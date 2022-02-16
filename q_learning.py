@@ -9,12 +9,13 @@ force_determinism = False
 # Add slip to the observation set (action failed)
 indicate_slip = True
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = True
+is_partially_obs = False
 
-env = gym.make('poge-v1', world_file_path='worlds/world0.txt',
+env = gym.make('poge-v1', world_file_path='worlds/world2.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
-               is_partially_obs=is_partially_obs)
+               is_partially_obs=is_partially_obs,
+               one_time_rewards=True)
 
 q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
