@@ -47,12 +47,12 @@ class EpsGreedySampler(Sampler):
         # print([s for s in schedulers.keys()])
         # print(self.scheduler_freq_counter)
 
-        print(reward_states)
         for _ in range(self.new_samples):
             # select a scheduler according to the inverse frequency distribution -> less used schedulers will be
             # sampled more
 
             ignore_scheduler = True if len(reward_states) == 0 else False
+
             scheduler = None
             if not ignore_scheduler:
                 reward_state = random.choices(list(self.scheduler_freq_counter.keys()),
@@ -113,7 +113,7 @@ indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
 is_partially_obs = True
 
-min_seq_len, max_seq_len = 20, 50
+min_seq_len, max_seq_len = 10, 50
 
 world = gym.make(id='poge-v1',
                  world_file_path='worlds/world1.txt',
@@ -126,11 +126,11 @@ input_al = list(world.actions_dict.keys())
 
 sul = StochasticWorldSUL(world)
 
-data = get_initial_data(sul, input_al, initial_sample_num=5000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+data = get_initial_data(sul, input_al, initial_sample_num=20000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
-sampler = EpsGreedySampler(input_al, eps=0.8, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+sampler = EpsGreedySampler(input_al, eps=0.9, num_new_samples=4000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
-final_model = run_active_Alergia(data=data, sul=sul, sampler=sampler, n_iter=10)
+final_model = run_active_Alergia(data=data, sul=sul, sampler=sampler, n_iter=5)
 # final_model = load_automaton_from_file('passive_active.dot', automaton_type='mdp')
 print(f'Final model size: {final_model.size}')
 # save_automaton_to_file(final_model, 'passive_active')

@@ -73,16 +73,18 @@ class PartiallyObservableWorld(gym.Env):
         world_to_process = self.world if not self.is_partially_obs else self.abstract_world
         for x, row in enumerate(world_to_process):
             for y, tile in enumerate(row):
-                if tile not in {'#', 'D', 'E', 'G'}:
-                    abstraction = self.abstract_symbol_name_map[tile]
-                    if self.is_partially_obs and abstraction not in abstract_symbols:
-                        abstract_symbols.add(abstraction)
-                        self.state_2_one_hot_map[abstraction] = counter
-                        counter += 1
-                    if self.is_partially_obs and tile == ' ':
-                        self.state_2_one_hot_map[(x, y)] = counter
-                        counter += 1
-                    elif not self.is_partially_obs:
+                if tile not in {'#', 'D', 'E'}:
+                    if self.is_partially_obs:
+                        if tile == ' ' or tile == 'G':
+                            self.state_2_one_hot_map[(x, y)] = counter
+                            counter += 1
+                        else:
+                            abstraction = self.abstract_symbol_name_map[tile]
+                            if abstraction not in abstract_symbols:
+                                abstract_symbols.add(abstraction)
+                                self.state_2_one_hot_map[abstraction] = counter
+                                counter += 1
+                    else:
                         self.state_2_one_hot_map[(x, y)] = counter
                         counter += 1
 
