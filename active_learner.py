@@ -13,13 +13,14 @@ from utils import test_model, StochasticWorldSUL
 aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
 # Make environment deterministic even if it is stochastic
-force_determinism = False
+force_determinism = True
 # Add slip to the observation set (action failed)
 indicate_slip = True
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
 is_partially_obs = True  # prism will not work with False (need to fix touple type)
 
-world = gym.make('poge-v1', world_file_path='worlds/world0.txt',
+world = gym.make(id='poge-v1',
+                 world_file_path='worlds/world1.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs)
@@ -34,6 +35,8 @@ learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='s
 # visualize_automaton(learned_model)
 # save_automaton_to_file(learned_model, 'approximate_model')
 
+print(learned_model)
+exit()
 learned_model_mdp = smm_to_mdp_conversion(learned_model)
 
 prism_interface = PrismInterface("GOAL", learned_model_mdp, num_steps=17)

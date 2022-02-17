@@ -3,7 +3,7 @@ from copy import deepcopy
 import gym
 from gym import spaces
 
-from gym_partially_observable_grid.gridworld_parser import PartiallyObsGridworldParser
+from gym_partially_observable_grid.utils import PartiallyObsGridworldParser
 
 
 class PartiallyObservableWorld(gym.Env):
@@ -24,6 +24,8 @@ class PartiallyObservableWorld(gym.Env):
 
         # Representation of concrete ((x,y) coordinates) world and abstract world
         self.world, self.abstract_world = parser.world, parser.abstract_world
+        # Map of abstract symbols to their names (if any)
+        self.abstract_symbol_name_map = parser.abstract_symbol_name_map
         # Map of stochastic tiles, where each tile is identified by rule_id
         self.rules = parser.rules
         # Map of locations to rule_ids, that is, tile has stochastic behaviour
@@ -42,6 +44,10 @@ class PartiallyObservableWorld(gym.Env):
 
         # Indicate whether observations will be abstracted or will they be x-y coordinates
         self.is_partially_obs = is_partially_obs
+
+        # If abstraction is not defined, environment cannot be partially observable
+        if self.abstract_world is None:
+            self.is_partially_obs = False
 
         # Variables
         self.initial_location = parser.initial_location
@@ -67,10 +73,11 @@ class PartiallyObservableWorld(gym.Env):
         world_to_process = self.world if not self.is_partially_obs else self.abstract_world
         for x, row in enumerate(world_to_process):
             for y, tile in enumerate(row):
-                if tile not in {'#', 'D'}:
-                    if self.is_partially_obs and tile not in abstract_symbols:
-                        abstract_symbols.add(tile)
-                        self.state_2_one_hot_map[tile] = counter
+                if tile not in {'#', 'D', 'E', 'G'}:
+                    abstraction = self.abstract_symbol_name_map[tile]
+                    if self.is_partially_obs and abstraction not in abstract_symbols:
+                        abstract_symbols.add(abstraction)
+                        self.state_2_one_hot_map[abstraction] = counter
                         counter += 1
                     if self.is_partially_obs and tile == ' ':
                         self.state_2_one_hot_map[(x, y)] = counter
@@ -79,26 +86,11 @@ class PartiallyObservableWorld(gym.Env):
                         self.state_2_one_hot_map[(x, y)] = counter
                         counter += 1
 
-        # add tiles reachable by slip actions to observation space
-        if self.indicate_slip:
-            for xy, tile in self.stochastic_tile.items():
-                slip_actions = self.rules[tile].get_all_actions()
-                x, y = xy
-                for slip_act in slip_actions:
-                    if slip_act == 0:  # up
-                        x -= 1
-                    if slip_act == 1:  # down
-                        x += 1
-                    if slip_act == 2:  # left
-                        y -= 1
-                    if slip_act == 3:  # right
-                        y += 1
-
-                    reached_abstract = f'{self.abstract_world[x][y]}_slip'
-                    if self.is_partially_obs and reached_abstract not in abstract_symbols:
-                        abstract_symbols.add(reached_abstract)
-                        self.state_2_one_hot_map[reached_abstract] = counter
-                        counter += 1
+        if self.rules:
+            for state in list(self.state_2_one_hot_map.keys()):
+                slip_state = f'{state}_slip'
+                self.state_2_one_hot_map[slip_state] = counter
+                counter += 1
 
         self.one_hot_2_state_map = {v: k for k, v in self.state_2_one_hot_map.items()}
         return counter
@@ -112,12 +104,6 @@ class PartiallyObservableWorld(gym.Env):
             observation = self.get_observation()
             done = True if self.step_counter >= self.max_ep_len else False
             return self.encode(observation), 0, done, {}
-            # return '#', 0, False, {}
-
-        if self.world[new_location[0]][new_location[1]] == '*':
-            # TODO update like #
-            return self.encode((new_location[0], new_location[1])), -self.goal_reward, True, {}
-            # return '*', -1, True, {}
 
         # If you open the door, perform that step once more and enter new room
         if self.world[new_location[0]][new_location[1]] == 'D':
@@ -136,10 +122,10 @@ class PartiallyObservableWorld(gym.Env):
                 reward = self.reward_tiles[self.player_location]
             self.collected_rewards.add(self.player_location)
 
-        if self.player_location == self.goal_location:
+        if self.player_location in self.goal_location:
             reward = self.goal_reward
 
-        done = 1 if self.player_location == self.goal_location or self.step_counter >= self.max_ep_len else 0
+        done = 1 if self.player_location in self.goal_location or self.step_counter >= self.max_ep_len else 0
         observation = self.get_observation()
 
         return self.encode(observation), reward, done, {}
@@ -179,7 +165,7 @@ class PartiallyObservableWorld(gym.Env):
     def get_abstraction(self):
         abstract_tile = self.abstract_world[self.player_location[0]][self.player_location[1]]
         if abstract_tile != ' ':
-            return self.abstract_world[self.player_location[0]][self.player_location[1]]
+            return self.abstract_symbol_name_map[abstract_tile]
         else:
             return self.player_location
 
