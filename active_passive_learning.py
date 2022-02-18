@@ -1,7 +1,5 @@
 import random
 from collections import Counter
-from statistics import mean
-from time import sleep
 
 import aalpy.paths
 import gym
@@ -116,7 +114,7 @@ is_partially_obs = True
 min_seq_len, max_seq_len = 10, 50
 
 world = gym.make(id='poge-v1',
-                 world_file_path='worlds/world2.txt',
+                 world_file_path='worlds/world1.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs,
@@ -126,7 +124,7 @@ input_al = list(world.actions_dict.keys())
 
 sul = StochasticWorldSUL(world)
 
-data = get_initial_data(sul, input_al, initial_sample_num=5000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+data = get_initial_data(sul, input_al, initial_sample_num=10000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
 sampler = EpsGreedySampler(input_al, eps=0.9, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 

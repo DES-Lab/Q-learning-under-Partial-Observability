@@ -23,20 +23,32 @@ class StochasticWorldSUL(SUL):
 
     def step(self, letter):
         if letter is None:
-            return self.world.get_abstraction()
+            output = self.world.get_abstraction()
+            if output[0].isdigit().isdigit():
+                output = f'state_{output}'
+            return output
+
         output, reward, done, info = self.world.step(self.world.actions_dict[letter])
+
         if reward == self.world.goal_reward or self.goal_reached:
             self.goal_reached = True
             return "GOAL"
+
         if done or self.is_done:
             self.is_done = True
-            return "EP_END"
+            return "MAX_STEPS_REACHED"
+
         output = self.world.decode(output)
         if isinstance(output, tuple):
             output = f'{output[0]}_{output[1]}'
         if reward != 0:
             reward = reward if reward > 0 else f'neg_{reward * -1}'
-        output = f's{output}' if reward == 0 else f's{output}_r_{reward}'
+
+        if output[0].isdigit():
+            output = f'state_{output}'
+        if reward != 0:
+            output = f'{output}_r_{reward}'
+
         return output
 
 
