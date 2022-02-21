@@ -8,19 +8,20 @@ import numpy as np
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
 # the underlying system to behave like deterministic MDP.
-indicate_slip = True
+indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = False
+is_partially_obs = True
 # If one_time_rewards is set to True, reward in single location will be obtained only once per episode.
 # Otherwise, reward will be given every time
-one_time_rewards = True
+one_time_rewards = False
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world0.txt',
+               world_file_path='worlds/world1+rew.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
-               one_time_rewards=one_time_rewards)
+               one_time_rewards=one_time_rewards,
+               step_penalty=0.1)
 
 q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
@@ -77,7 +78,7 @@ for _ in range(episodes):
         action = np.argmax(q_table[state])
         state, reward, done, info = env.step(action)
 
-        if reward and done:
+        if reward == env.goal_reward and done:
             goals_reached += 1
 
         epochs += 1
