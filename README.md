@@ -28,6 +28,7 @@ Reserved characters:
 - `D` - door in the wall
 - `E` - starting player location
 - `G` - goal location
+- `T` - terminals
 
 ## Example World
 ```
