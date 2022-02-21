@@ -40,10 +40,11 @@ sul = StochasticWorldSUL(env)
 # static properties of environment
 reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
 input_al = list(env.actions_dict.keys())
-min_seq_len = 3
-max_seq_len = 20
+min_seq_len = 10
+max_seq_len = 50
 n_obs = env.observation_space.n
 curiosity_reward = 1
+
 
 class PoRlData:
     def __init__(self, aut_model, aal_samples):
@@ -56,7 +57,7 @@ class PoRlData:
         self.model_state = None
         self.unknown_model_state = False
 
-    def update(self,rl_samples):
+    def update(self, rl_samples):
         new_model = run_Alergia(self.aal_samples, automaton_type="mdp")
         new_n_model_states = len(new_model.states)
         print(f"Learned MDP with {new_n_model_states} states")
@@ -74,14 +75,14 @@ class PoRlData:
         self.aut_model.reset_to_initial()
         self.model_state = self.aut_model.current_state
 
-    def get_extended_state(self,rl_state):
+    def get_extended_state(self, rl_state):
         model_state_id = self.model_state_ids[self.model_state]
         extended_state = model_state_id * n_obs + rl_state
         if self.unknown_model_state:
             extended_state += self.n_model_states * n_obs
         return extended_state
 
-    def perform_aut_step(self,mdp_action, output):
+    def perform_aut_step(self, mdp_action, output):
         step_possible = False
         additional_reward = 0
         if not self.unknown_model_state:
@@ -98,9 +99,10 @@ class PoRlData:
 
 def initialize():
     print("Starting initial automata learning phase")
-    aal_samples = get_initial_data(sul, input_al, initial_sample_num=10000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+    aal_samples = get_initial_data(sul, input_al, initial_sample_num=10000, min_seq_len=min_seq_len,
+                                   max_seq_len=max_seq_len)
     model = run_Alergia(aal_samples, automaton_type="mdp")
-    po_rl_data = PoRlData(model,aal_samples)
+    po_rl_data = PoRlData(model, aal_samples)
     print(f"Learned MDP with {po_rl_data.n_model_states} states")
     return po_rl_data
 
@@ -140,7 +142,7 @@ def replay_traces(rl_samples, model, model_state_ids, q_table):
             q_table[extended_state, action] = new_value
 
 
-def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
+def train(init_po_rl_data: PoRlData, num_training_episodes=30000):
     rl_samples = []
     po_rl_data = init_po_rl_data
     goal_reached_frequency = 0
@@ -157,7 +159,8 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
         rl_sample = []
         while not done:
             # print(f"state {state},{model_state_id}: {extended_state}")
-            action = env.action_space.sample() if random.random() < epsilon else np.argmax(po_rl_data.q_table[extended_state])
+            action = env.action_space.sample() if random.random() < epsilon else np.argmax(
+                po_rl_data.q_table[extended_state])
             steps += 1
             next_state, reward, done, info = env.step(action)
             if reward == env.goal_reward and done:
@@ -166,7 +169,7 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
             # print(f"Performed {mdp_action}")
-            add_reward = po_rl_data.perform_aut_step(mdp_action,output)
+            add_reward = po_rl_data.perform_aut_step(mdp_action, output)
             reward += add_reward
             # step_possible = False
             # if not unknown_model_state:
@@ -213,7 +216,7 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
     return po_rl_data
 
 
-def evaluate(po_rl_data : PoRlData, episodes=100):
+def evaluate(po_rl_data: PoRlData, episodes=100):
     total_epochs = 0
     goals_reached = 0
 
