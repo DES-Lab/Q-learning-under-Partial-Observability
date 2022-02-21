@@ -22,7 +22,7 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world1.txt',
+               world_file_path='worlds/world2.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
@@ -103,8 +103,9 @@ class PoRlAgent:
                 extended_state = self.get_extended_state(state)
 
                 # MDP step
-                self.perform_aut_step(mdp_action,output)
+                add_reward = self.perform_aut_step(mdp_action,output)
                 next_extended_state = self.get_extended_state(next_state)
+                reward += add_reward
 
                 old_value = self.q_table[extended_state, action]
                 next_max = np.max(self.q_table[next_extended_state])
@@ -159,7 +160,8 @@ def train(init_po_rl_agent: PoRlAgent, num_training_episodes=30000):
             po_rl_agent.q_table[extended_state, action] = new_value
             # TODO maybe subtract curiosity reward here, so we don't add it twice
             # it seems to work better without subtracting, though
-            rl_sample.append((state, action, next_state, reward-add_reward, mdp_action, output))
+            # reward-=add_reward
+            rl_sample.append((state, action, next_state, reward, mdp_action, output))
 
             if reward == -1:
                 penalties += 1
