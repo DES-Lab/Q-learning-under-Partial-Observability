@@ -35,8 +35,6 @@ learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='s
 # visualize_automaton(learned_model)
 # save_automaton_to_file(learned_model, 'approximate_model')
 
-print(learned_model)
-exit()
 learned_model_mdp = smm_to_mdp_conversion(learned_model)
 
 prism_interface = PrismInterface("GOAL", learned_model_mdp, num_steps=17)

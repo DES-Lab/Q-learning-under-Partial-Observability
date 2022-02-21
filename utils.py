@@ -83,3 +83,18 @@ def test_model(model, sul, input_al, num_episodes, max_ep_len=100):
     print(f'Tested on {num_episodes} episodes:')
     print(f'Goal reached  : {goal_reached}')
     print(f'Avg. step count : {mean(num_steps_per_ep)}')
+
+
+def get_initial_data(sul, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50):
+    # Generate random initial samples
+    random_samples = []
+    for _ in range(initial_sample_num):
+        sample = ['Init']
+        sul.pre()
+        for _ in range(random.randint(min_seq_len, max_seq_len)):
+            i = random.choice(input_al)
+            o = sul.step(i)
+            sample.append((i, o))
+        sul.post()
+        random_samples.append(sample)
+    return random_samples
