@@ -250,7 +250,7 @@ def evaluate(po_rl_data : PoRlData, episodes=100):
             elif step_possible:
                 model_state = po_rl_data.aut_model.current_state
 
-            if reward == 10 and done:
+            if reward == env.goal_reward and done:
                 goals_reached += 1
 
             epochs += 1
