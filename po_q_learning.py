@@ -160,7 +160,7 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
             action = env.action_space.sample() if random.random() < epsilon else np.argmax(po_rl_data.q_table[extended_state])
             steps += 1
             next_state, reward, done, info = env.step(action)
-            if reward == 10 and done:
+            if reward == env.goal_reward and done:
                 goal_reached_frequency += 1
             # step in MDP
             output = env.decode(next_state)
