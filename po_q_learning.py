@@ -22,7 +22,7 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world1+rew.txt',
+               world_file_path='worlds/world2.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
@@ -42,7 +42,7 @@ input_al = list(env.actions_dict.keys())
 min_seq_len = 3
 max_seq_len = 20
 n_obs = env.observation_space.n
-
+curiosity_reward = 1
 
 class PoRlData:
     def __init__(self, aut_model, aal_samples):
@@ -52,6 +52,8 @@ class PoRlData:
         self.n_model_states = len(aut_model.states)
         # potentially have only n_states*2 x |actions|
         self.q_table = np.zeros([n_obs * self.n_model_states * 2, env.action_space.n])
+        self.model_state = None
+        self.unknown_model_state = False
 
     def update(self,rl_samples):
         new_model = run_Alergia(self.aal_samples, automaton_type="mdp")
@@ -65,6 +67,32 @@ class PoRlData:
         self.q_table = np.zeros([env.observation_space.n * self.n_model_states * 2, env.action_space.n])
         replay_traces(rl_samples, self.aut_model, self.model_state_ids, self.q_table)
         print("Replayed traces")
+
+    def reset_aut(self):
+        self.unknown_model_state = False
+        self.aut_model.reset_to_initial()
+        self.model_state = self.aut_model.current_state
+
+    def get_extended_state(self,rl_state):
+        model_state_id = self.model_state_ids[self.model_state]
+        extended_state = model_state_id * n_obs + rl_state
+        if self.unknown_model_state:
+            extended_state += self.n_model_states * n_obs
+        return extended_state
+
+    def perform_aut_step(self,mdp_action, output):
+        step_possible = False
+        additional_reward = 0
+        if not self.unknown_model_state:
+            step_possible = self.aut_model.step_to(mdp_action, output) is not None
+        if not step_possible and not self.unknown_model_state:
+            # print(f"Unknown model states after {steps} steps")
+            # TODO remove me if curiosity does not make sense
+            additional_reward += curiosity_reward
+            self.unknown_model_state = True
+        elif step_possible:
+            self.model_state = self.aut_model.current_state
+        return additional_reward
 
 
 def initialize():
@@ -94,6 +122,8 @@ def replay_traces(rl_samples, model, model_state_ids, q_table):
                 step_possible = model.step_to(mdp_action, output) is not None
             if not step_possible and not unknown_model_state:
                 # print(f"Unknown model states after {steps} steps")
+                # TODO remove me if curiosity does not make sense
+                reward += curiosity_reward
                 unknown_model_state = True
             elif step_possible:
                 model_state = model.current_state
@@ -115,17 +145,13 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
     goal_reached_frequency = 0
     for i in range(1, num_training_episodes + 1):
         state = env.reset()
-        po_rl_data.aut_model.reset_to_initial()
-        model_state = po_rl_data.aut_model.current_state
-        unknown_model_state = False
-
+        # po_rl_data.aut_model.reset_to_initial()
+        # model_state = po_rl_data.aut_model.current_state
+        po_rl_data.reset_aut()
         epochs, penalties, reward, = 0, 0, 0
         done = False
         steps = 0
-        model_state_id = po_rl_data.model_state_ids[model_state]
-        extended_state = model_state_id * n_obs + state
-        if unknown_model_state:
-            extended_state += po_rl_data.n_model_states * n_obs
+        extended_state = po_rl_data.get_extended_state(state)
         sample = ['Init']
         rl_sample = []
         while not done:
@@ -139,21 +165,25 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
             # print(f"Performed {mdp_action}")
-            step_possible = False
-            if not unknown_model_state:
-                step_possible = po_rl_data.aut_model.step_to(mdp_action, output) is not None
-            if not step_possible and not unknown_model_state:
-                # print(f"Unknown model states after {steps} steps")
-                unknown_model_state = True
-            elif step_possible:
-                model_state = po_rl_data.aut_model.current_state
+            add_reward = po_rl_data.perform_aut_step(mdp_action,output)
+            reward += add_reward
+            # step_possible = False
+            # if not unknown_model_state:
+            #     step_possible = po_rl_data.aut_model.step_to(mdp_action, output) is not None
+            # if not step_possible and not unknown_model_state:
+            #     # print(f"Unknown model states after {steps} steps")
+            #     # TODO remove me if curiosity does not make sense
+            #     reward += curiosity_reward
+            #     unknown_model_state = True
+            # elif step_possible:
+            #     model_state = po_rl_data.aut_model.current_state
 
             sample.append((mdp_action, output))
-
-            model_state_id = po_rl_data.model_state_ids[model_state]
-            next_extended_state = model_state_id * n_obs + next_state
-            if unknown_model_state:
-                next_extended_state += po_rl_data.n_model_states * n_obs
+            # model_state_id = po_rl_data.model_state_ids[model_state]
+            # next_extended_state = model_state_id * n_obs + next_state
+            # if unknown_model_state:
+            #     next_extended_state += po_rl_data.n_model_states * n_obs
+            next_extended_state = po_rl_data.get_extended_state(next_state)
 
             old_value = po_rl_data.q_table[extended_state, action]
             next_max = np.max(po_rl_data.q_table[next_extended_state])
@@ -165,7 +195,8 @@ def train(init_po_rl_data : PoRlData, num_training_episodes = 30000):
                 penalties += 1
 
             state = next_state
-            extended_state = next_extended_state
+            extended_state = po_rl_data.get_extended_state(state)
+            # extended_state = next_extended_state
             epochs += 1
         po_rl_data.aal_samples.append(sample)
         rl_samples.append(rl_sample)
