@@ -41,7 +41,7 @@ class StochasticWorldSUL(SUL):
         output = self.world.decode(output)
         if isinstance(output, tuple):
             output = f'{output[0]}_{output[1]}'
-        if reward != 0:
+        if reward != 0 and reward != self.world.step_penalty:
             reward = reward if reward > 0 else f'neg_{reward * -1}'
 
         if output[0].isdigit():

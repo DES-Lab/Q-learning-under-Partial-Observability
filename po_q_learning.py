@@ -27,7 +27,8 @@ env = gym.make(id='poge-v1',
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
-               max_ep_len=100)
+               max_ep_len=100,
+               step_penalty=0.1)
 
 # Hyper parameters
 alpha = 0.1
