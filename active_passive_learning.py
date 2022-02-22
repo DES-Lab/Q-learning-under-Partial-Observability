@@ -10,7 +10,7 @@ from aalpy.learning_algs.stochastic_passive.ActiveAleriga import Sampler
 from aalpy.utils import visualize_automaton, save_automaton_to_file, load_automaton_from_file
 
 from prism_schedulers import PrismInterface
-from utils import StochasticWorldSUL, test_model, get_initial_data
+from utils import test_model, get_initial_data, process_output
 
 aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
@@ -25,7 +25,7 @@ class EpsGreedySampler(Sampler):
         self.scheduler_freq_counter = Counter()
         self.sampling_round = 0
 
-    def sample(self, sul, model):
+    def sample(self, env, model):
         self.sampling_round += 1
         new_data = []
 
@@ -43,7 +43,6 @@ class EpsGreedySampler(Sampler):
         # print(reward_states)
         # print([s for s in schedulers.keys()])
         # print(self.scheduler_freq_counter)
-
         for _ in range(self.new_samples):
             # select a scheduler according to the inverse frequency distribution -> less used schedulers will be
             # sampled more
@@ -59,7 +58,7 @@ class EpsGreedySampler(Sampler):
                 ignore_scheduler = True if scheduler.property_val < 0.5 else False
 
             sample = ['Init']
-            sul.pre()
+            env.reset()
             if not ignore_scheduler:
                 scheduler.reset()
             continue_random = ignore_scheduler
@@ -72,17 +71,18 @@ class EpsGreedySampler(Sampler):
                 else:
                     i = random.choice(self.input_al)
 
-                o = sul.step(i)
+                encoded_i = env.actions_dict[i]
+                o, r, _, _ = env.step(encoded_i)
+                o = process_output(env, o, r)
                 sample.append((i, o))
 
-                if o == 'GOAL':
+                if r == env.goal_reward:
                     break
 
                 # once reward state is reached, continue doing completely random sampling
                 if not continue_random and not ignore_scheduler:
                     continue_random = True if o == scheduler.dest else not scheduler.step_to(i, o)
 
-            sul.post()
             new_data.append(sample)
 
         return new_data
@@ -97,24 +97,23 @@ is_partially_obs = True
 
 min_seq_len, max_seq_len = 10, 50
 
-world = gym.make(id='poge-v1',
-                 world_file_path='worlds/world1.txt',
-                 force_determinism=force_determinism,
-                 indicate_slip=indicate_slip,
-                 is_partially_obs=is_partially_obs,
-                 one_time_rewards=True)
+env = gym.make(id='poge-v1',
+               world_file_path='worlds/world1+rew.txt',
+               force_determinism=force_determinism,
+               indicate_slip=indicate_slip,
+               is_partially_obs=is_partially_obs,
+               one_time_rewards=True)
 
-input_al = list(world.actions_dict.keys())
+input_al = list(env.actions_dict.keys())
 
-sul = StochasticWorldSUL(world)
-
-data = get_initial_data(sul, input_al, initial_sample_num=10000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+data = get_initial_data(env, input_al, initial_sample_num=10000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
 sampler = EpsGreedySampler(input_al, eps=0.9, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
-final_model = run_active_Alergia(data=data, sul=sul, sampler=sampler, n_iter=5)
+final_model = run_active_Alergia(data=data, sul=env, sampler=sampler, n_iter=5)
+
 # final_model = load_automaton_from_file('passive_active.dot', automaton_type='mdp')
 print(f'Final model size: {final_model.size}')
 # save_automaton_to_file(final_model, 'passive_active')
 
-test_model(final_model, sul, input_al, num_episodes=100)
+test_model(final_model, env, input_al, num_episodes=100)

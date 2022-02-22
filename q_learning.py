@@ -10,7 +10,7 @@ force_determinism = False
 # the underlying system to behave like deterministic MDP.
 indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = True
+is_partially_obs = False
 # If one_time_rewards is set to True, reward in single location will be obtained only once per episode.
 # Otherwise, reward will be given every time
 one_time_rewards = False

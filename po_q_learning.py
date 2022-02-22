@@ -9,7 +9,7 @@ from aalpy.utils import load_automaton_from_file
 import numpy as np
 
 # Make environment deterministic even if it is stochastic
-from utils import StochasticWorldSUL, get_initial_data
+from utils import get_initial_data
 
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
@@ -35,8 +35,6 @@ alpha = 0.1
 gamma = 0.9
 epsilon = 0.1
 
-sul = StochasticWorldSUL(env)
-
 # static properties of environment
 reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
 input_al = list(env.actions_dict.keys())
@@ -50,6 +48,7 @@ update_interval = 1000
 training_episodes = 20000
 goal_reach_threshold = None
 
+
 class PoRlAgent:
     def __init__(self, aut_model, aal_samples):
         self.aut_model = aut_model
@@ -61,7 +60,7 @@ class PoRlAgent:
         self.model_state = None
         self.unknown_model_state = False
 
-    def update(self, rl_samples,curiosity_reward):
+    def update(self, rl_samples, curiosity_reward):
         new_model = run_Alergia(self.aal_samples, automaton_type="mdp")
         new_n_model_states = len(new_model.states)
         print(f"Learned MDP with {new_n_model_states} states")
@@ -71,7 +70,7 @@ class PoRlAgent:
         self.model_state_ids = dict([(v, k) for k, v in enumerate(self.aut_model.states)])
         # potentially have only n_states*2 x |actions|
         self.q_table = np.zeros([env.observation_space.n * self.n_model_states * 2, env.action_space.n])
-        self.replay_traces(rl_samples,curiosity_reward)
+        self.replay_traces(rl_samples, curiosity_reward)
         print("Replayed traces")
 
     def reset_aut(self):
@@ -100,16 +99,16 @@ class PoRlAgent:
             self.model_state = self.aut_model.current_state
         return additional_reward
 
-    def replay_traces(self,rl_samples,curiosity_reward):
+    def replay_traces(self, rl_samples, curiosity_reward):
         for sample in rl_samples:
             self.reset_aut()
             for (state, action, next_state, reward, mdp_action, output) in sample:
                 extended_state = self.get_extended_state(state)
 
                 # MDP step
-                add_reward = self.perform_aut_step(mdp_action,output,curiosity_reward)
+                add_reward = self.perform_aut_step(mdp_action, output, curiosity_reward)
                 next_extended_state = self.get_extended_state(next_state)
-                #reward += add_reward
+                # reward += add_reward
 
                 old_value = self.q_table[extended_state, action]
                 next_max = np.max(self.q_table[next_extended_state])
@@ -119,7 +118,7 @@ class PoRlAgent:
 
 def initialize():
     print("Starting initial automata learning phase")
-    aal_samples = get_initial_data(sul, input_al, initial_sample_num=10000, min_seq_len=min_seq_len,
+    aal_samples = get_initial_data(env, input_al, initial_sample_num=10000, min_seq_len=min_seq_len,
                                    max_seq_len=max_seq_len)
     model = run_Alergia(aal_samples, automaton_type="mdp")
     po_rl_data = PoRlAgent(model, aal_samples)
@@ -127,7 +126,7 @@ def initialize():
     return po_rl_data
 
 
-def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=training_episodes):
+def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=training_episodes):
     rl_samples = []
     po_rl_agent = init_po_rl_agent
     goal_reached_frequency = 0
@@ -152,7 +151,7 @@ def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=tr
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
             # print(f"Performed {mdp_action}")
-            add_reward = po_rl_agent.perform_aut_step(mdp_action, output,curiosity_reward)
+            add_reward = po_rl_agent.perform_aut_step(mdp_action, output, curiosity_reward)
             reward += add_reward
 
             sample.append((mdp_action, output))
@@ -164,7 +163,7 @@ def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=tr
             po_rl_agent.q_table[extended_state, action] = new_value
             # TODO maybe subtract curiosity reward here, so we don't add it twice
             # it seems to work better without subtracting, though
-            reward-=add_reward
+            reward -= add_reward
             rl_sample.append((state, action, next_state, reward, mdp_action, output))
 
             if reward == -1:
@@ -183,7 +182,7 @@ def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=tr
             print(f"Goal reached in {goal_reached_frequency / 10} percent of the cases in last 1000 ep.")
             if goal_reach_threshold and goal_reached_frequency / 10 >= goal_reach_threshold:
                 break
-            po_rl_agent.update(rl_samples,curiosity_reward)
+            po_rl_agent.update(rl_samples, curiosity_reward)
             goal_reached_frequency = 0
     print("Training finished.\n")
     return po_rl_agent
@@ -228,5 +227,5 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=100):
 
 
 initial_agent = initialize()
-trained_agent = train(initial_agent,cur_reward)
+trained_agent = train(initial_agent, cur_reward)
 evaluate(trained_agent)
