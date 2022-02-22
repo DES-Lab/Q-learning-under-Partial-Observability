@@ -22,18 +22,20 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/gravity.txt',
+               world_file_path='worlds/world1.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
                max_ep_len=100,
-               step_penalty=1)
+               goal_reward=60,
+               step_penalty=0.5)
+# env.play()
 
 # Hyper parameters
 alpha = 0.1
 gamma = 0.9
-epsilon = 0.1
+epsilon = 0.5
 
 # static properties of environment
 reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
@@ -41,11 +43,12 @@ input_al = list(env.actions_dict.keys())
 min_seq_len = 10
 max_seq_len = 50
 n_obs = env.observation_space.n
-cur_reward = 2
-cur_reward_reduction = 1
+cur_reward = 3
+cur_reward_reduction = 0.2
+cur_reward_reduction_mode = "minus"
 eps_aal = 0.001
-update_interval = 1000
-training_episodes = 20000
+update_interval = 2000
+training_episodes = 30000
 goal_reach_threshold = None
 
 
@@ -70,7 +73,7 @@ class PoRlAgent:
         self.model_state_ids = dict([(v, k) for k, v in enumerate(self.aut_model.states)])
         # potentially have only n_states*2 x |actions|
         self.q_table = np.zeros([env.observation_space.n * self.n_model_states * 2, env.action_space.n])
-        self.replay_traces(rl_samples, curiosity_reward)
+        #self.replay_traces(rl_samples, curiosity_reward)
         print("Replayed traces")
 
     def reset_aut(self):
@@ -109,6 +112,7 @@ class PoRlAgent:
                 add_reward = self.perform_aut_step(mdp_action, output, curiosity_reward)
                 next_extended_state = self.get_extended_state(next_state)
                 # reward += add_reward
+                reward += add_reward
 
                 old_value = self.q_table[extended_state, action]
                 next_max = np.max(self.q_table[next_extended_state])
@@ -126,11 +130,16 @@ def initialize():
     return po_rl_data
 
 
-def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=training_episodes):
+def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=training_episodes, epsilon=epsilon,
+          update_interval=update_interval):
     rl_samples = []
     po_rl_agent = init_po_rl_agent
     goal_reached_frequency = 0
     for i in range(1, num_training_episodes + 1):
+        if i > 20000:
+            update_interval = 100000000
+            epsilon = 0.1
+            curiosity_reward = 0
         state = env.reset()
         po_rl_agent.reset_aut()
         epochs, penalties, reward, = 0, 0, 0
@@ -177,18 +186,25 @@ def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=t
         if i % 100 == 0:
             print(f"Episode: {i}")
         if i % update_interval == 0:
-            curiosity_reward *= cur_reward_reduction
+            #rl_samples = rl_samples[-2000:]
+            if cur_reward_reduction_mode == "minus":
+                curiosity_reward -= cur_reward_reduction
+            else:
+                curiosity_reward *= cur_reward_reduction
+            if curiosity_reward < 0:
+                curiosity_reward = 0
 
-            print(f"Goal reached in {goal_reached_frequency / 10} percent of the cases in last 1000 ep.")
+            print(f"Goal reached in {(goal_reached_frequency / update_interval) * 100} percent of the cases in last 1000 ep.")
             if goal_reach_threshold and goal_reached_frequency / 10 >= goal_reach_threshold:
                 break
             po_rl_agent.update(rl_samples, curiosity_reward)
             goal_reached_frequency = 0
     print("Training finished.\n")
+    print(po_rl_agent.q_table)
     return po_rl_agent
 
 
-def evaluate(po_rl_agent: PoRlAgent, episodes=100):
+def evaluate(po_rl_agent: PoRlAgent, episodes=10):
     total_epochs = 0
     goals_reached = 0
 
@@ -210,7 +226,7 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=100):
             output = env.decode(state)
             mdp_action = reverse_action_dict[action]
 
-            print(f"{steps}: {mdp_action}")
+            print(f"{steps}: {mdp_action} : {output}")
             # print(f"Performed {mdp_action}")
             po_rl_agent.perform_aut_step(mdp_action, output, 0)
 

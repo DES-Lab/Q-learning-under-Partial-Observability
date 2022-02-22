@@ -4,14 +4,16 @@
 #G  #
 #   #
 #   #
+#   #
 #E @#
 #####
 
 ===Abstraction===
 
 #####
-#311#
-#111#
+#341#
+#441#
+#441#
 #111#
 #112#
 #####
@@ -19,6 +21,7 @@
 1:garage
 2:button
 3:cookie
+4:almost
 
 ===Behaviour===
 
@@ -27,8 +30,10 @@
 #111#
 #111#
 #111#
+#222#
 #####
 
-1-up-[up:0.5, down:0.5]
-1-left-[left:0.5, down:0.5]
-1-right-[right:0.5, down:0.5]
+1-up-[up:0.4, down:0.6]
+1-left-[left:0.4, down:0.6]
+1-right-[right:0.4, down:0.6]
+2-up-[up:0.4, down:0.6]
