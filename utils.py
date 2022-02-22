@@ -115,8 +115,8 @@ def visualize_episode(env, coordinate_list, step_time=0.7):
         env.player_location = xy
         world = deepcopy(env.world)
         world[xy[0]][xy[1]] = 'E'
-        for l in world:
-            print(f'{"".join(l)}')
+        for line in world:
+            print(f'{"".join(line)}')
         sleep(step_time)
 
 
