@@ -1,5 +1,6 @@
 import random
 from statistics import mean
+from itertools import product
 
 from aalpy.base import SUL
 
@@ -98,3 +99,22 @@ def get_initial_data(sul, input_al, initial_sample_num=5000, min_seq_len=10, max
         sul.post()
         random_samples.append(sample)
     return random_samples
+
+
+def get_samples_reaching_goal(env, num_samples=10):
+    min_seq_len = 15
+    input_al = list(env.actions_dict.values())
+    test_cases = []
+    while len(test_cases) < num_samples:
+        for seq in product(input_al, repeat=min_seq_len):
+            env.reset()
+            for i in seq:
+                o, r, d, i = env.step(i)
+                if r == env.goal_reward:
+                    test_cases.append(seq)
+                    break
+
+        min_seq_len += 2
+
+    for t in test_cases:
+        print(t)
