@@ -60,12 +60,14 @@ def process_output(env, output, reward=0):
     output = env.decode(output)
     if isinstance(output, tuple):
         output = f'{output[0]}_{output[1]}'
+
     if reward != 0 and reward != env.step_penalty:
         reward = reward if reward > 0 else f'neg_{reward * -1}'
+        print(reward, env.step_penalty)
 
     if output[0].isdigit():
         output = f'state_{output}'
-    if reward != 0:
+    if reward != 0 and reward != env.step_penalty:
         output = f'{output}_r_{reward}'
 
     return output
