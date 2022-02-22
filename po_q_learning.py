@@ -14,7 +14,7 @@ from utils import StochasticWorldSUL, get_initial_data
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
 # the underlying system to behave like deterministic MDP.
-indicate_slip = True
+indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
 is_partially_obs = True
 # If one_time_rewards is set to True, reward in single location will be obtained only once per episode.
@@ -27,12 +27,12 @@ env = gym.make(id='poge-v1',
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
-               max_ep_len=100,
-               step_penalty=0.1)
+               max_ep_len=200,
+               step_penalty=0.2)
 
 # Hyper parameters
 alpha = 0.1
-gamma = 0.6
+gamma = 0.9
 epsilon = 0.1
 
 sul = StochasticWorldSUL(env)
@@ -43,8 +43,8 @@ input_al = list(env.actions_dict.keys())
 min_seq_len = 10
 max_seq_len = 50
 n_obs = env.observation_space.n
-curiosity_reward = 1
-
+cur_reward = 2
+cur_reward_reduction = 1
 
 class PoRlAgent:
     def __init__(self, aut_model, aal_samples):
@@ -57,7 +57,7 @@ class PoRlAgent:
         self.model_state = None
         self.unknown_model_state = False
 
-    def update(self, rl_samples):
+    def update(self, rl_samples,curiosity_reward):
         new_model = run_Alergia(self.aal_samples, automaton_type="mdp")
         new_n_model_states = len(new_model.states)
         print(f"Learned MDP with {new_n_model_states} states")
@@ -67,7 +67,7 @@ class PoRlAgent:
         self.model_state_ids = dict([(v, k) for k, v in enumerate(self.aut_model.states)])
         # potentially have only n_states*2 x |actions|
         self.q_table = np.zeros([env.observation_space.n * self.n_model_states * 2, env.action_space.n])
-        self.replay_traces(rl_samples)
+        self.replay_traces(rl_samples,curiosity_reward)
         print("Replayed traces")
 
     def reset_aut(self):
@@ -82,7 +82,7 @@ class PoRlAgent:
             extended_state += self.n_model_states * n_obs
         return extended_state
 
-    def perform_aut_step(self, mdp_action, output):
+    def perform_aut_step(self, mdp_action, output, curiosity_reward):
         step_possible = False
         additional_reward = 0
         if not self.unknown_model_state:
@@ -96,14 +96,14 @@ class PoRlAgent:
             self.model_state = self.aut_model.current_state
         return additional_reward
 
-    def replay_traces(self,rl_samples):
+    def replay_traces(self,rl_samples,curiosity_reward):
         for sample in rl_samples:
             self.reset_aut()
             for (state, action, next_state, reward, mdp_action, output) in sample:
                 extended_state = self.get_extended_state(state)
 
                 # MDP step
-                add_reward = self.perform_aut_step(mdp_action,output)
+                add_reward = self.perform_aut_step(mdp_action,output,curiosity_reward)
                 next_extended_state = self.get_extended_state(next_state)
                 reward += add_reward
 
@@ -123,7 +123,7 @@ def initialize():
     return po_rl_data
 
 
-def train(init_po_rl_agent: PoRlAgent, num_training_episodes=30000):
+def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=15000):
     rl_samples = []
     po_rl_agent = init_po_rl_agent
     goal_reached_frequency = 0
@@ -148,7 +148,7 @@ def train(init_po_rl_agent: PoRlAgent, num_training_episodes=30000):
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
             # print(f"Performed {mdp_action}")
-            add_reward = po_rl_agent.perform_aut_step(mdp_action, output)
+            add_reward = po_rl_agent.perform_aut_step(mdp_action, output,curiosity_reward)
             reward += add_reward
 
             sample.append((mdp_action, output))
@@ -160,7 +160,7 @@ def train(init_po_rl_agent: PoRlAgent, num_training_episodes=30000):
             po_rl_agent.q_table[extended_state, action] = new_value
             # TODO maybe subtract curiosity reward here, so we don't add it twice
             # it seems to work better without subtracting, though
-            # reward-=add_reward
+            reward-=add_reward
             rl_sample.append((state, action, next_state, reward, mdp_action, output))
 
             if reward == -1:
@@ -173,11 +173,13 @@ def train(init_po_rl_agent: PoRlAgent, num_training_episodes=30000):
         rl_samples.append(rl_sample)
         if i % 100 == 0:
             print(f"Episode: {i}")
-        if i % 1000 == 0:
+        if i % 500 == 0:
+            curiosity_reward *= cur_reward_reduction
+
             print(f"Goal reached in {goal_reached_frequency / 10} percent of the cases in last 1000 ep.")
-            if goal_reached_frequency / 10 > 95:
+            if goal_reached_frequency / 10 > 98:
                 break
-            po_rl_agent.update(rl_samples)
+            po_rl_agent.update(rl_samples,curiosity_reward)
             goal_reached_frequency = 0
     print("Training finished.\n")
     return po_rl_agent
@@ -204,7 +206,7 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=100):
             output = env.decode(state)
             mdp_action = reverse_action_dict[action]
             # print(f"Performed {mdp_action}")
-            po_rl_agent.perform_aut_step(mdp_action, output)
+            po_rl_agent.perform_aut_step(mdp_action, output, 0)
 
             if reward == env.goal_reward and done:
                 goals_reached += 1
@@ -217,6 +219,7 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=100):
     print(f"Total Number of Goal reached: {goals_reached}")
     print(f"Average timesteps per episode: {total_epochs / episodes}")
 
+
 initial_agent = initialize()
-trained_agent = train(initial_agent)
+trained_agent = train(initial_agent,cur_reward)
 evaluate(trained_agent)
