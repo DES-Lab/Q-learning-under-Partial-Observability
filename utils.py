@@ -167,8 +167,5 @@ def get_samples_reaching_goal(env, num_samples=10):
 
     env.use_stochastic_tiles = True
 
-    action_paths = []
-    for p in path_locations:
-        print(p)
     return path_locations
 

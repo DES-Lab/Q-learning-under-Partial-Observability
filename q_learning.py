@@ -5,7 +5,7 @@ import gym_partially_observable_grid
 import numpy as np
 
 # Make environment deterministic even if it is stochastic
-from utils import visualize_episode
+from utils import visualize_episode, get_samples_reaching_goal
 
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
@@ -18,7 +18,7 @@ is_partially_obs = False
 one_time_rewards = False
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world1+rew.txt',
+               world_file_path='worlds/world1.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
@@ -31,6 +31,7 @@ q_table = np.zeros([env.observation_space.n, env.action_space.n])
 alpha = 0.1
 gamma = 0.6
 epsilon = 0.1
+
 
 num_training_episodes = 10000
 
