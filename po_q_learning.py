@@ -22,13 +22,13 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world2.txt',
+               world_file_path='worlds/gravity.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
-               max_ep_len=200,
-               step_penalty=0.2)
+               max_ep_len=100,
+               step_penalty=1)
 
 # Hyper parameters
 alpha = 0.1
@@ -45,6 +45,10 @@ max_seq_len = 50
 n_obs = env.observation_space.n
 cur_reward = 2
 cur_reward_reduction = 1
+eps_aal = 0.001
+update_interval = 1000
+training_episodes = 20000
+goal_reach_threshold = None
 
 class PoRlAgent:
     def __init__(self, aut_model, aal_samples):
@@ -105,7 +109,7 @@ class PoRlAgent:
                 # MDP step
                 add_reward = self.perform_aut_step(mdp_action,output,curiosity_reward)
                 next_extended_state = self.get_extended_state(next_state)
-                reward += add_reward
+                #reward += add_reward
 
                 old_value = self.q_table[extended_state, action]
                 next_max = np.max(self.q_table[next_extended_state])
@@ -123,7 +127,7 @@ def initialize():
     return po_rl_data
 
 
-def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=15000):
+def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=training_episodes):
     rl_samples = []
     po_rl_agent = init_po_rl_agent
     goal_reached_frequency = 0
@@ -173,11 +177,11 @@ def train(init_po_rl_agent: PoRlAgent,curiosity_reward, num_training_episodes=15
         rl_samples.append(rl_sample)
         if i % 100 == 0:
             print(f"Episode: {i}")
-        if i % 500 == 0:
+        if i % update_interval == 0:
             curiosity_reward *= cur_reward_reduction
 
             print(f"Goal reached in {goal_reached_frequency / 10} percent of the cases in last 1000 ep.")
-            if goal_reached_frequency / 10 > 98:
+            if goal_reach_threshold and goal_reached_frequency / 10 >= goal_reach_threshold:
                 break
             po_rl_agent.update(rl_samples,curiosity_reward)
             goal_reached_frequency = 0
@@ -201,10 +205,13 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=100):
             extended_state = po_rl_agent.get_extended_state(state)
 
             action = np.argmax(po_rl_agent.q_table[extended_state])
+
             state, reward, done, info = env.step(action)
             # step in MDP
             output = env.decode(state)
             mdp_action = reverse_action_dict[action]
+
+            print(f"{steps}: {mdp_action}")
             # print(f"Performed {mdp_action}")
             po_rl_agent.perform_aut_step(mdp_action, output, 0)
 
