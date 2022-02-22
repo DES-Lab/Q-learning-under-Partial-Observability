@@ -1,6 +1,6 @@
 import random
-from statistics import mean
 from itertools import product
+from statistics import mean
 
 from aalpy.base import SUL
 
@@ -63,7 +63,6 @@ def process_output(env, output, reward=0):
 
     if reward != 0 and reward != env.step_penalty:
         reward = reward if reward > 0 else f'neg_{reward * -1}'
-        print(reward, env.step_penalty)
 
     if output[0].isdigit():
         output = f'state_{output}'
@@ -105,6 +104,20 @@ def test_model(model, env, input_al, num_episodes, max_ep_len=100):
     print(f'Tested on {num_episodes} episodes:')
     print(f'Goal reached  : {goal_reached}')
     print(f'Avg. step count : {mean(num_steps_per_ep)}')
+
+
+def visualize_episode(env, coordinate_list, step_time=0.7):
+    from time import sleep
+    from copy import deepcopy
+    env.reset()
+
+    for xy in coordinate_list:
+        env.player_location = xy
+        world = deepcopy(env.world)
+        world[xy[0]][xy[1]] = 'E'
+        for l in world:
+            print(f'{"".join(l)}')
+        sleep(step_time)
 
 
 def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50):

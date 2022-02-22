@@ -5,6 +5,8 @@ import gym_partially_observable_grid
 import numpy as np
 
 # Make environment deterministic even if it is stochastic
+from utils import visualize_episode
+
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
 # the underlying system to behave like deterministic MDP.
@@ -68,23 +70,32 @@ total_epochs = 0
 episodes = 100
 
 goals_reached = 0
+
+coordinates_list = []
+
 for _ in range(episodes):
     state = env.reset()
     epochs, penalties, reward = 0, 0, 0
 
     done = False
 
+    episode_locations = []
     while not done:
         action = np.argmax(q_table[state])
         state, reward, done, info = env.step(action)
+
+        episode_locations.append(env.player_location)
 
         if reward == env.goal_reward and done:
             goals_reached += 1
 
         epochs += 1
 
+    coordinates_list.append(episode_locations)
     total_epochs += epochs
 
 print(f"Results after {episodes} episodes:")
 print(f"Total Number of Goal reached: {goals_reached}")
 print(f"Average timesteps per episode: {total_epochs / episodes}")
+
+visualize_episode(env, coordinates_list[0])
