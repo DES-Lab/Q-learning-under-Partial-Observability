@@ -1,6 +1,6 @@
 import random
-from statistics import mean
 from itertools import product
+from statistics import mean
 
 from aalpy.base import SUL
 from aalpy.learning_algs.stochastic_passive.CompatibilityChecker import CompatibilityChecker, HoeffdingCompatibility
@@ -124,12 +124,13 @@ def process_output(env, output, reward=0):
     output = env.decode(output)
     if isinstance(output, tuple):
         output = f'{output[0]}_{output[1]}'
+
     if reward != 0 and reward != env.step_penalty:
         reward = reward if reward > 0 else f'neg_{reward * -1}'
 
     if output[0].isdigit():
         output = f'state_{output}'
-    if reward != 0:
+    if reward != 0 and reward != env.step_penalty:
         output = f'{output}_r_{reward}'
 
     return output
@@ -167,6 +168,20 @@ def test_model(model, env, input_al, num_episodes, max_ep_len=100):
     print(f'Tested on {num_episodes} episodes:')
     print(f'Goal reached  : {goal_reached}')
     print(f'Avg. step count : {mean(num_steps_per_ep)}')
+
+
+def visualize_episode(env, coordinate_list, step_time=0.7):
+    from time import sleep
+    from copy import deepcopy
+    env.reset()
+
+    for xy in coordinate_list:
+        env.player_location = xy
+        world = deepcopy(env.world)
+        world[xy[0]][xy[1]] = 'E'
+        for line in world:
+            print(f'{"".join(line)}')
+        sleep(step_time)
 
 
 def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50):
