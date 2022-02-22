@@ -135,29 +135,40 @@ def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max
     return random_samples
 
 
-# def get_samples_reaching_goal(env, num_samples=10):
-#     explored = []
-#     queue = [[a] for a in env.actions_dict.values()]
-#     print(queue)
-#     exit()
-#     while queue:
-#         path = queue.pop(0)
-#         node = path[-1]
-#         if node not in explored:
-#             neighbours = node.transitions.values()
-#             for neighbour in neighbours:
-#                 new_path = list(path)
-#                 new_path.append(neighbour)
-#                 queue.append(new_path)
-#                 # return path if neighbour is goal
-#                 if neighbour == target_state:
-#                     acc_seq = new_path[:-1]
-#                     inputs = []
-#                     for ind, state in enumerate(acc_seq):
-#                         inputs.append(next(key for key, value in state.transitions.items()
-#                                            if value == new_path[ind + 1]))
-#                     return tuple(inputs)
-#
-#             # mark node as explored
-#             explored.append(node)
-#     return ()
+def get_samples_reaching_goal(env, num_samples=10):
+
+    explored = set()
+    actions = list(env.actions_dict.values())
+    queue = [[env.player_location]]
+    path_locations = []
+
+    while queue:
+        path = queue.pop(0)
+        location = path[-1]
+        if location not in explored:
+            for a in actions:
+
+                # reset the env
+                env.reset()
+                env.use_stochastic_tiles = False
+
+                env.env.player_location = location
+                _, r, _, _ = env.step(a)
+
+                new_path = list(path)
+                new_path.append(env.env.player_location)
+                queue.append(new_path)
+
+                if r == env.goal_reward:
+                    path_locations.append(new_path)
+
+            # mark node as explored
+            explored.add(location)
+
+    env.use_stochastic_tiles = True
+
+    action_paths = []
+    for p in path_locations:
+        print(p)
+    return path_locations
+
