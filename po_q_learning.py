@@ -56,7 +56,7 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world2.txt',
+               world_file_path='worlds/world3.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
@@ -80,13 +80,13 @@ max_seq_len = 50
 # epsilon = 0.5
 
 config = PoRLConfig(init_epsilon=0.9,
-                    init_curiosity_rew=2,
+                    init_curiosity_rew=2, #2 for world2
                     curiosity_rew_reduction=0.9,
                     curiosity_rew_reduction_mode="mult")
 
-parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1,gamma=0.9, training_episodes=60000,
+parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1,gamma=0.9, training_episodes=30000,
                             update_interval=1000,early_stopping_threshold=None,
-                            curiosity_reward=config.init_curiosity_rew, freeze_automaton_after=45000)
+                            curiosity_reward=config.init_curiosity_rew, freeze_automaton_after=15000)
 
 parameters.epsilon_update_scheme = config.linear_decrease_to_freeze(config.init_epsilon, 0.1,parameters)
 

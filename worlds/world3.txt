@@ -11,10 +11,10 @@
 ===Abstraction===
 
 ###########
-#CCAAAAAAG#
-#CCACBB#GG#
+#CCAAAAAAB#
+#CCACBB#BB#
 #CABA###CB#
-#CC#ABB#AG#
+#CC#ABB#AB#
 #AC#ACCABB#
 ###########
 
