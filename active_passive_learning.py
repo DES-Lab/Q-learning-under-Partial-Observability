@@ -16,7 +16,7 @@ aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
 
 class EpsGreedySampler(Sampler):
-    def __init__(self, input_al, eps=0.9, num_new_samples=2000, min_seq_len=10, max_seq_len=50):
+    def __init__(self, input_al, eps=0.1, num_new_samples=2000, min_seq_len=10, max_seq_len=50):
         self.eps = eps
         self.new_samples = num_new_samples
         self.input_al = input_al
@@ -31,7 +31,7 @@ class EpsGreedySampler(Sampler):
 
         reward_states = set()
         for s in model.states:
-            if '_r_' in s.output or 'GOAL' in s.output:
+            if '_r_' in s.output and 'neg' not in s.output or 'GOAL' in s.output:
                 reward_states.add(s.output)
                 if s.output not in self.scheduler_freq_counter.keys():
                     self.scheduler_freq_counter[s.output] += 1
@@ -63,7 +63,7 @@ class EpsGreedySampler(Sampler):
                 scheduler.reset()
             continue_random = ignore_scheduler
             for _ in range(random.randint(self.min_seq_len, self.max_seq_len)):
-                if not continue_random and random.random() < self.eps:
+                if not continue_random and random.random() < 1 - self.eps:
                     i = scheduler.get_input()
                     if i is None:
                         i = random.choice(self.input_al)
@@ -98,7 +98,7 @@ is_partially_obs = True
 min_seq_len, max_seq_len = 10, 50
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world1+rew.txt',
+               world_file_path='worlds/big_gravity.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
@@ -108,7 +108,7 @@ input_al = list(env.actions_dict.keys())
 
 data = get_initial_data(env, input_al, initial_sample_num=10000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
-sampler = EpsGreedySampler(input_al, eps=0.9, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+sampler = EpsGreedySampler(input_al, eps=0.1, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
 final_model = run_active_Alergia(data=data, sul=env, sampler=sampler, n_iter=5)
 
