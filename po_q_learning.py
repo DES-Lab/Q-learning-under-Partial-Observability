@@ -62,8 +62,8 @@ env = gym.make(id='poge-v1',
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
                max_ep_len=150,
-               goal_reward=10,  # 60 for gravity
-               step_penalty=0.1,  # 0.5 for gravity
+               goal_reward=10,  # 60 for gravity, 10 for world2
+               step_penalty=0.1,  # 0.5 for gravity, 0.1 for world 2
                indicate_wall=True)
 # env.play()
 # static properties of environment
@@ -84,9 +84,9 @@ config = PoRLConfig(init_epsilon=0.9,
                     curiosity_rew_reduction=0.9,
                     curiosity_rew_reduction_mode="mult")
 
-parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1,gamma=0.9, training_episodes=40000,
+parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1,gamma=0.9, training_episodes=60000,
                             update_interval=1000,early_stopping_threshold=None,
-                            curiosity_reward=config.init_curiosity_rew, freeze_automaton_after=30000)
+                            curiosity_reward=config.init_curiosity_rew, freeze_automaton_after=45000)
 
 parameters.epsilon_update_scheme = config.linear_decrease_to_freeze(config.init_epsilon, 0.1,parameters)
 
