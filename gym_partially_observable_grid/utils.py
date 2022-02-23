@@ -115,7 +115,7 @@ class PartiallyObsGridworldParser:
                 if tile == 'T':
                     self.terminal_locations.add((x, y))
                 if tile == '@':
-                    self.behavioral_toggles.add((x,y))
+                    self.behavioral_toggles.add((x, y))
                 if tile != '#' and tile != 'D':
                     self.state_space += 1
 
