@@ -77,15 +77,7 @@ max_seq_len = 50
 # alpha = 0.1
 # gamma = 0.9
 # epsilon = 0.5
-#
-#
-# cur_reward = 3
-# cur_reward_reduction = 0.2
-# cur_reward_reduction_mode = "minus"
-# eps_aal = 0.001
-# update_interval = 2000
-# training_episodes = 30000
-# goal_reach_threshold = None
+
 config = PoRLConfig(init_epsilon=0.5,
                     init_curiosity_rew=3,
                     curiosity_rew_reduction=0.2,
@@ -179,7 +171,7 @@ def train(init_po_rl_agent: PoRlAgent, po_rl_config: PoRLConfig, po_rl_parameter
     rl_samples = []
     po_rl_agent = init_po_rl_agent
     goal_reached_frequency = 0
-    for episode in range(1, po_rl_parameters.num_training_episodes + 1):
+    for episode in range(1, po_rl_parameters.training_episodes + 1):
         # if episode > po_rl_config.freeze_automaton_after:
         #     update_interval = 100000000
         #     epsilon = 0.1
