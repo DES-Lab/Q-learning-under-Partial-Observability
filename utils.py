@@ -2,8 +2,72 @@ import random
 from statistics import mean
 
 from aalpy.base import SUL
+from aalpy.learning_algs.stochastic_passive.CompatibilityChecker import CompatibilityChecker, HoeffdingCompatibility
+from aalpy.learning_algs.stochastic_passive.FPTA import AlergiaPtaNode
 
 from prism_schedulers import PrismInterface
+
+from aalpy.learning_algs.stochastic.DifferenceChecker import chi2_table
+
+
+class Chi2Compatibility(CompatibilityChecker):
+    def __init__(self, eps):
+        self.alpha = eps
+        self.chi2_cache = dict()
+        if 1 - self.alpha not in chi2_table.keys():
+            raise ValueError("alpha must be in [0.01,0.001,0.05]")
+        self.chi2_values = chi2_table[1 - self.alpha]
+
+    def check_difference(self, a: AlergiaPtaNode, b: AlergiaPtaNode, **kwargs):
+        if not a.input_frequency or not b.input_frequency:
+            return False
+        n_1 = sum(a.input_frequency.values())
+        n_2 = sum(b.input_frequency.values())
+        if not n_1 or not n_2:
+            return False
+
+        keys = list(set(a.input_frequency.keys()).union(b.input_frequency.keys()))
+        dof = len(keys) - 1
+        if dof == 0:
+            return False
+        keys_not_zero = set()
+        shared_keys = set()
+        for k in keys:
+            if a.input_frequency[k] > 0 and b.input_frequency[k] > 0:
+                shared_keys.add(k)
+            if a.input_frequency[k] > 0 or b.input_frequency[k] > 0:
+                keys_not_zero.add(k)
+
+        if len(shared_keys) == 0:
+            # if the supports of the tested frequencies are completely then chi2 makes no sense, use the Hoeffding test
+            # to determine if there are enough observations for a difference
+            hoeffding_checker = HoeffdingCompatibility(self.alpha)
+            return hoeffding_checker.check_difference(a, b)
+
+        Q = self.compute_q(a.input_frequency, b.input_frequency, keys_not_zero)
+        if dof not in self.chi2_values.keys():
+            raise ValueError("Too many possible outputs, chi2 table needs to be extended.")
+        else:
+            chi2_val = self.chi2_values[dof]
+
+        return Q >= chi2_val
+
+    def compute_q(self, freq_1, freq2, keys):
+        n_1 = sum(freq_1.values())
+        n_2 = sum(freq2.values())
+
+        Q = 0
+        default_val = 0
+        yates_correction = -0.5 if len(keys) == 2 and \
+                                   any(freq_1.get(k, 0) < 5 or freq2.get(k, 0) < 5 for k in keys) else 0
+        for k in keys:
+            p_hat_k = float(freq_1.get(k, default_val) + freq2.get(k, default_val)) / (n_1 + n_2)
+            q_1_k = float(((abs(freq_1.get(k, default_val) - n_1 * p_hat_k)) + yates_correction) ** 2) / (
+                    n_1 * p_hat_k)
+            q_2_k = float(((abs(freq2.get(k, default_val) - n_2 * p_hat_k)) + yates_correction) ** 2) / (
+                    n_2 * p_hat_k)
+            Q = Q + q_1_k + q_2_k
+        return Q
 
 
 class StochasticWorldSUL(SUL):
