@@ -11,6 +11,40 @@ import numpy as np
 # Make environment deterministic even if it is stochastic
 from utils import get_initial_data
 
+
+class PoRLParameters:
+    def __init__(self, epsilon, alpha, gamma, training_episodes, update_interval, early_stopping_threshold,
+                 curiosity_reward, freeze_automaton_after):
+        self.epsilon = epsilon
+        self.alpha = alpha
+        self.gamma = gamma
+        self.curiosity_reward = curiosity_reward
+        self.training_episodes = training_episodes
+        self.freeze_automaton_after = freeze_automaton_after
+        self.update_interval = update_interval
+        self.early_stopping_threshold = early_stopping_threshold
+        self.epsilon_update_scheme = lambda old_eps, ep: old_eps
+
+    def update_eps(self,ep):
+        self.epsilon = self.epsilon_update_scheme(self.epsilon,ep)
+
+class PoRLConfig:
+    def __init__(self, init_epsilon, init_curiosity_rew,
+                 curiosity_rew_reduction, curiosity_rew_reduction_mode
+                 ):
+        self.init_epsilon = init_epsilon
+        self.init_curiosity_rew = init_curiosity_rew
+        self.curiosity_rew_reduction = curiosity_rew_reduction
+        self.curiosity_rew_reduction_mode = curiosity_rew_reduction_mode
+
+    def linear_decrease_to_freeze(self, start_epsilon, target_value, po_rl_parameters: PoRLParameters):
+        start_value = start_epsilon
+        decrement = (start_value - target_value) / min(po_rl_parameters.freeze_automaton_after,
+                                                       po_rl_parameters.training_episodes)
+        update_scheme = lambda old_eps, ep: old_eps - decrement if ep < po_rl_parameters.freeze_automaton_after else target_value
+        return update_scheme
+
+
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
 # the underlying system to behave like deterministic MDP.
@@ -22,35 +56,46 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world1.txt',
+               world_file_path='worlds/big_gravity.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
-               max_ep_len=100,
+               max_ep_len=150,
                goal_reward=60,
                step_penalty=0.5)
 # env.play()
-
-# Hyper parameters
-alpha = 0.1
-gamma = 0.9
-epsilon = 0.5
-
 # static properties of environment
 reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
 input_al = list(env.actions_dict.keys())
+
+n_obs = env.observation_space.n
 min_seq_len = 10
 max_seq_len = 50
-n_obs = env.observation_space.n
-cur_reward = 3
-cur_reward_reduction = 0.2
-cur_reward_reduction_mode = "minus"
-eps_aal = 0.001
-update_interval = 2000
-training_episodes = 30000
-goal_reach_threshold = None
 
+# # Hyper parameters
+# alpha = 0.1
+# gamma = 0.9
+# epsilon = 0.5
+#
+#
+# cur_reward = 3
+# cur_reward_reduction = 0.2
+# cur_reward_reduction_mode = "minus"
+# eps_aal = 0.001
+# update_interval = 2000
+# training_episodes = 30000
+# goal_reach_threshold = None
+config = PoRLConfig(init_epsilon=0.5,
+                    init_curiosity_rew=3,
+                    curiosity_rew_reduction=0.2,
+                    curiosity_rew_reduction_mode="minus")
+
+parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1,gamma=0.9, training_episodes=30000,
+                            update_interval=1000,early_stopping_threshold=None,
+                            curiosity_reward=config.init_curiosity_rew, freeze_automaton_after=20000)
+
+parameters.epsilon_update_scheme = config.linear_decrease_to_freeze(config.init_epsilon, 0.1,parameters)
 
 class PoRlAgent:
     def __init__(self, aut_model, aal_samples):
@@ -63,7 +108,7 @@ class PoRlAgent:
         self.model_state = None
         self.unknown_model_state = False
 
-    def update(self, rl_samples, curiosity_reward):
+    def update(self, rl_samples, parameters: PoRLParameters):
         new_model = run_Alergia(self.aal_samples, automaton_type="mdp")
         new_n_model_states = len(new_model.states)
         print(f"Learned MDP with {new_n_model_states} states")
@@ -73,7 +118,7 @@ class PoRlAgent:
         self.model_state_ids = dict([(v, k) for k, v in enumerate(self.aut_model.states)])
         # potentially have only n_states*2 x |actions|
         self.q_table = np.zeros([env.observation_space.n * self.n_model_states * 2, env.action_space.n])
-        #self.replay_traces(rl_samples, curiosity_reward)
+        self.replay_traces(rl_samples, parameters)
         print("Replayed traces")
 
     def reset_aut(self):
@@ -102,21 +147,21 @@ class PoRlAgent:
             self.model_state = self.aut_model.current_state
         return additional_reward
 
-    def replay_traces(self, rl_samples, curiosity_reward):
+    def replay_traces(self, rl_samples, parameters: PoRLParameters):
         for sample in rl_samples:
             self.reset_aut()
             for (state, action, next_state, reward, mdp_action, output) in sample:
                 extended_state = self.get_extended_state(state)
 
                 # MDP step
-                add_reward = self.perform_aut_step(mdp_action, output, curiosity_reward)
+                add_reward = self.perform_aut_step(mdp_action, output, parameters.curiosity_reward)
                 next_extended_state = self.get_extended_state(next_state)
                 # reward += add_reward
                 reward += add_reward
 
                 old_value = self.q_table[extended_state, action]
                 next_max = np.max(self.q_table[next_extended_state])
-                new_value = (1 - alpha) * old_value + alpha * (reward + gamma * next_max)
+                new_value = (1 - parameters.alpha) * old_value + parameters.alpha * (reward + parameters.gamma * next_max)
                 self.q_table[extended_state, action] = new_value
 
 
@@ -130,16 +175,15 @@ def initialize():
     return po_rl_data
 
 
-def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=training_episodes, epsilon=epsilon,
-          update_interval=update_interval):
+def train(init_po_rl_agent: PoRlAgent, po_rl_config: PoRLConfig, po_rl_parameters: PoRLParameters):
     rl_samples = []
     po_rl_agent = init_po_rl_agent
     goal_reached_frequency = 0
-    for i in range(1, num_training_episodes + 1):
-        if i > 20000:
-            update_interval = 100000000
-            epsilon = 0.1
-            curiosity_reward = 0
+    for episode in range(1, po_rl_parameters.num_training_episodes + 1):
+        # if episode > po_rl_config.freeze_automaton_after:
+        #     update_interval = 100000000
+        #     epsilon = 0.1
+        #     curiosity_reward = 0
         state = env.reset()
         po_rl_agent.reset_aut()
         epochs, penalties, reward, = 0, 0, 0
@@ -150,7 +194,7 @@ def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=t
         rl_sample = []
         while not done:
             # print(f"state {state},{model_state_id}: {extended_state}")
-            action = env.action_space.sample() if random.random() < epsilon else np.argmax(
+            action = env.action_space.sample() if random.random() < po_rl_parameters.epsilon else np.argmax(
                 po_rl_agent.q_table[extended_state])
             steps += 1
             next_state, reward, done, info = env.step(action)
@@ -160,7 +204,7 @@ def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=t
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
             # print(f"Performed {mdp_action}")
-            add_reward = po_rl_agent.perform_aut_step(mdp_action, output, curiosity_reward)
+            add_reward = po_rl_agent.perform_aut_step(mdp_action, output, po_rl_parameters.curiosity_reward)
             reward += add_reward
 
             sample.append((mdp_action, output))
@@ -168,7 +212,7 @@ def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=t
 
             old_value = po_rl_agent.q_table[extended_state, action]
             next_max = np.max(po_rl_agent.q_table[next_extended_state])
-            new_value = (1 - alpha) * old_value + alpha * (reward + gamma * next_max)
+            new_value = (1 - po_rl_parameters.alpha) * old_value + po_rl_parameters.alpha * (reward + po_rl_parameters.gamma * next_max)
             po_rl_agent.q_table[extended_state, action] = new_value
             # TODO maybe subtract curiosity reward here, so we don't add it twice
             # it seems to work better without subtracting, though
@@ -181,33 +225,36 @@ def train(init_po_rl_agent: PoRlAgent, curiosity_reward, num_training_episodes=t
             state = next_state
             extended_state = po_rl_agent.get_extended_state(state)
             epochs += 1
+        po_rl_parameters.update_eps(episode)
+        if episode > po_rl_parameters.freeze_automaton_after:
+            po_rl_parameters.curiosity_reward = 0
         po_rl_agent.aal_samples.append(sample)
         rl_samples.append(rl_sample)
-        if i % 100 == 0:
-            print(f"Episode: {i}")
-        if i % update_interval == 0:
+        if episode % 100 == 0:
+            print(f"Episode: {episode}")
+        if episode <= po_rl_parameters.freeze_automaton_after and episode % po_rl_parameters.update_interval == 0:
             #rl_samples = rl_samples[-2000:]
-            if cur_reward_reduction_mode == "minus":
-                curiosity_reward -= cur_reward_reduction
+            if po_rl_config.curiosity_rew_reduction_mode == "minus":
+                po_rl_parameters.curiosity_reward -= po_rl_config.curiosity_rew_reduction
             else:
-                curiosity_reward *= cur_reward_reduction
-            if curiosity_reward < 0:
-                curiosity_reward = 0
+                po_rl_parameters.curiosity_reward *= po_rl_config.curiosity_rew_reduction
+            if po_rl_parameters.curiosity_reward < 0:
+                po_rl_parameters.curiosity_reward = 0
 
-            print(f"Goal reached in {(goal_reached_frequency / update_interval) * 100} percent of the cases in last 1000 ep.")
-            if goal_reach_threshold and goal_reached_frequency / 10 >= goal_reach_threshold:
+            print(f"Goal reached in {(goal_reached_frequency / po_rl_parameters.update_interval) * 100} percent of the cases in last 1000 ep.")
+            if po_rl_parameters.early_stopping_threshold and goal_reached_frequency / 10 >= po_rl_parameters.early_stopping_threshold:
                 break
-            po_rl_agent.update(rl_samples, curiosity_reward)
+            po_rl_agent.update(rl_samples, po_rl_parameters)
             goal_reached_frequency = 0
     print("Training finished.\n")
     print(po_rl_agent.q_table)
     return po_rl_agent
 
 
-def evaluate(po_rl_agent: PoRlAgent, episodes=10):
+def evaluate(po_rl_agent: PoRlAgent, episodes=100):
     total_epochs = 0
     goals_reached = 0
-
+    coordinate_list = []
     for eval_ep in range(episodes):
         state = env.reset()
         epochs, penalties, reward = 0, 0, 0
@@ -215,6 +262,7 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=10):
 
         done = False
         steps = 0
+        coordinates = [env.player_location]
         while not done:
             steps += 1
             extended_state = po_rl_agent.get_extended_state(state)
@@ -222,6 +270,7 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=10):
             action = np.argmax(po_rl_agent.q_table[extended_state])
 
             state, reward, done, info = env.step(action)
+            coordinates.append(env.player_location)
             # step in MDP
             output = env.decode(state)
             mdp_action = reverse_action_dict[action]
@@ -234,14 +283,16 @@ def evaluate(po_rl_agent: PoRlAgent, episodes=10):
                 goals_reached += 1
 
             epochs += 1
-
+        coordinate_list.append(coordinates)
         total_epochs += epochs
-
     print(f"Results after {episodes} episodes:")
     print(f"Total Number of Goal reached: {goals_reached}")
     print(f"Average timesteps per episode: {total_epochs / episodes}")
+    return coordinate_list
 
 
 initial_agent = initialize()
-trained_agent = train(initial_agent, cur_reward)
-evaluate(trained_agent)
+trained_agent = train(initial_agent, po_rl_config=config, po_rl_parameters=parameters)
+coordinates = evaluate(trained_agent)
+from utils import visualize_episode
+visualize_episode(env,coordinates[0])
