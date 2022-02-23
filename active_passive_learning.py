@@ -97,8 +97,10 @@ is_partially_obs = True
 
 min_seq_len, max_seq_len = 10, 50
 
+# big confusing world, 10k random, 10x2k sampling
+
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/big_gravity.txt',
+               world_file_path='worlds/confusing_big_gravity.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,
@@ -110,7 +112,7 @@ data = get_initial_data(env, input_al, initial_sample_num=10000, min_seq_len=min
 
 sampler = EpsGreedySampler(input_al, eps=0.1, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
 
-final_model = run_active_Alergia(data=data, sul=env, sampler=sampler, n_iter=5)
+final_model = run_active_Alergia(data=data, sul=env, sampler=sampler, n_iter=10)
 
 # final_model = load_automaton_from_file('passive_active.dot', automaton_type='mdp')
 print(f'Final model size: {final_model.size}')
