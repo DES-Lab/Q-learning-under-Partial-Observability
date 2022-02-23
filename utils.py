@@ -1,5 +1,4 @@
 import random
-from itertools import product
 from statistics import mean
 
 from aalpy.base import SUL
@@ -201,19 +200,36 @@ def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max
 
 
 def get_samples_reaching_goal(env, num_samples=10):
-    min_seq_len = 15
-    input_al = list(env.actions_dict.values())
-    test_cases = []
-    while len(test_cases) < num_samples:
-        for seq in product(input_al, repeat=min_seq_len):
-            env.reset()
-            for i in seq:
-                o, r, d, i = env.step(i)
+
+    explored = set()
+    actions = list(env.actions_dict.values())
+    queue = [[env.player_location]]
+    path_locations = []
+
+    while queue:
+        path = queue.pop(0)
+        location = path[-1]
+        if location not in explored:
+            for a in actions:
+
+                # reset the env
+                env.reset()
+                env.use_stochastic_tiles = False
+
+                env.env.player_location = location
+                _, r, _, _ = env.step(a)
+
+                new_path = list(path)
+                new_path.append(env.env.player_location)
+                queue.append(new_path)
+
                 if r == env.goal_reward:
-                    test_cases.append(seq)
-                    break
+                    path_locations.append(new_path)
 
-        min_seq_len += 2
+            # mark node as explored
+            explored.add(location)
 
-    for t in test_cases:
-        print(t)
+    env.use_stochastic_tiles = True
+
+    return path_locations
+
