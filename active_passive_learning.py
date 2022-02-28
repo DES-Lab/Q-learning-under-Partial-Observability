@@ -1,16 +1,15 @@
+import gym
+import gym_partially_observable_grid
 import random
 from collections import Counter
 
 import aalpy.paths
-import gym
-import gym_partially_observable_grid
-
-from aalpy.learning_algs import run_active_Alergia
 from aalpy.learning_algs.stochastic_passive.ActiveAleriga import Sampler
-from aalpy.utils import visualize_automaton, save_automaton_to_file, load_automaton_from_file
+from aalpy.learning_algs import run_active_Alergia
+from aalpy.utils import save_automaton_to_file
 
 from prism_schedulers import PrismInterface
-from utils import test_model, get_initial_data, process_output
+from utils import get_initial_data, test_model, process_output
 
 aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
@@ -39,10 +38,9 @@ class EpsGreedySampler(Sampler):
         reward_states = list(reward_states)
 
         schedulers = {rs: PrismInterface(rs, model) for rs in reward_states}
+        # In some weird cases this could prevent crash
+        schedulers = {k: v for k, v in schedulers.items() if v is not None}
 
-        # print(reward_states)
-        # print([s for s in schedulers.keys()])
-        # print(self.scheduler_freq_counter)
         for _ in range(self.new_samples):
             # select a scheduler according to the inverse frequency distribution -> less used schedulers will be
             # sampled more
@@ -81,41 +79,74 @@ class EpsGreedySampler(Sampler):
 
                 # once reward state is reached, continue doing completely random sampling
                 if not continue_random and not ignore_scheduler:
-                    continue_random = True if o == scheduler.dest else not scheduler.step_to(i, o)
+                    continue_random = True if o == scheduler.destination else not scheduler.step_to(i, o)
 
             new_data.append(sample)
 
         return new_data
 
 
-# Make environment deterministic even if it is stochastic
-force_determinism = False
-# Add slip to the observation set (action failed)
-indicate_slip = False
-# Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = True
+def active_passive_experiment(exp_name,
+                              world,
+                              force_determinism=False,
+                              indicate_slip=False,
+                              indicate_wall=False,
+                              is_partially_obs=True,
+                              one_time_rewards=True,
+                              initial_sample_num=10000,
+                              min_seq_len=10,
+                              max_seq_len=50,
+                              active_passive_iterations=10,
+                              sampler_eps_value=0.1,
+                              num_new_samples=2000,
+                              test_episodes=100):
+    env = gym.make(id='poge-v1',
+                   world_file_path=world,
+                   force_determinism=force_determinism,
+                   indicate_slip=indicate_slip,
+                   is_partially_obs=is_partially_obs,
+                   indicate_wall=indicate_wall,
+                   one_time_rewards=one_time_rewards)
 
-min_seq_len, max_seq_len = 10, 50
+    input_al = list(env.actions_dict.keys())
 
-# big confusing world, 10k random, 10x2k sampling
+    data = get_initial_data(env,
+                            input_al,
+                            initial_sample_num=initial_sample_num,
+                            min_seq_len=min_seq_len,
+                            max_seq_len=max_seq_len)
 
-env = gym.make(id='poge-v1',
-               world_file_path='worlds/confusing_big_gravity.txt',
-               force_determinism=force_determinism,
-               indicate_slip=indicate_slip,
-               is_partially_obs=is_partially_obs,
-               one_time_rewards=True)
+    sampler = EpsGreedySampler(input_al,
+                               eps=sampler_eps_value,
+                               num_new_samples=num_new_samples,
+                               min_seq_len=min_seq_len,
+                               max_seq_len=max_seq_len)
 
-input_al = list(env.actions_dict.keys())
+    final_model = run_active_Alergia(data=data, sul=env, sampler=sampler, n_iter=active_passive_iterations)
 
-data = get_initial_data(env, input_al, initial_sample_num=10000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+    print(f'Final model size: {final_model.size}')
+    save_automaton_to_file(final_model, f'passive_active_{exp_name}')
 
-sampler = EpsGreedySampler(input_al, eps=0.1, num_new_samples=2000, min_seq_len=min_seq_len, max_seq_len=max_seq_len)
+    test_model(final_model, env, input_al, num_episodes=test_episodes)
 
-final_model = run_active_Alergia(data=data, sul=env, sampler=sampler, n_iter=10)
 
-# final_model = load_automaton_from_file('passive_active.dot', automaton_type='mdp')
-print(f'Final model size: {final_model.size}')
-# save_automaton_to_file(final_model, 'passive_active')
+def experiments_setup(exp_name):
+    if exp_name == 'confusing_big_gravity':
+        active_passive_experiment(
+            exp_name='confusing_big_gravity',
+            world='worlds/confusing_big_gravity.txt',
+            initial_sample_num=10000,
+            active_passive_iterations=10,
+            num_new_samples=4000)
+    if exp_name == 'world1':
+        active_passive_experiment(
+            exp_name='world1',
+            world='worlds/world1.txt',
+            initial_sample_num=5000,
+            active_passive_iterations=5,
+            num_new_samples=2000)
+    # TODO add other interesting experiments
 
-test_model(final_model, env, input_al, num_episodes=100)
+
+if __name__ == '__main__':
+    experiments_setup('confusing_big_gravity')

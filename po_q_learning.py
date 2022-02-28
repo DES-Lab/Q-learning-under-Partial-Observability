@@ -8,7 +8,6 @@ from aalpy.utils import load_automaton_from_file
 
 import numpy as np
 
-# Make environment deterministic even if it is stochastic
 from utils import get_initial_data
 
 
@@ -25,8 +24,9 @@ class PoRLParameters:
         self.early_stopping_threshold = early_stopping_threshold
         self.epsilon_update_scheme = lambda old_eps, ep: old_eps
 
-    def update_eps(self,ep):
-        self.epsilon = self.epsilon_update_scheme(self.epsilon,ep)
+    def update_eps(self, ep):
+        self.epsilon = self.epsilon_update_scheme(self.epsilon, ep)
+
 
 class PoRLConfig:
     def __init__(self, init_epsilon, init_curiosity_rew,
@@ -80,15 +80,16 @@ max_seq_len = 50
 # epsilon = 0.5
 
 config = PoRLConfig(init_epsilon=0.9,
-                    init_curiosity_rew=2, #2 for world2
+                    init_curiosity_rew=2,  # 2 for world2
                     curiosity_rew_reduction=0.9,
                     curiosity_rew_reduction_mode="mult")
 
-parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1,gamma=0.9, training_episodes=30000,
-                            update_interval=1000,early_stopping_threshold=None,
+parameters = PoRLParameters(epsilon=config.init_epsilon, alpha=0.1, gamma=0.9, training_episodes=30000,
+                            update_interval=1000, early_stopping_threshold=None,
                             curiosity_reward=config.init_curiosity_rew, freeze_automaton_after=15000)
 
-parameters.epsilon_update_scheme = config.linear_decrease_to_freeze(config.init_epsilon, 0.1,parameters)
+parameters.epsilon_update_scheme = config.linear_decrease_to_freeze(config.init_epsilon, 0.1, parameters)
+
 
 class PoRlAgent:
     def __init__(self, aut_model, aal_samples):
@@ -154,7 +155,8 @@ class PoRlAgent:
 
                 old_value = self.q_table[extended_state, action]
                 next_max = np.max(self.q_table[next_extended_state])
-                new_value = (1 - parameters.alpha) * old_value + parameters.alpha * (reward + parameters.gamma * next_max)
+                new_value = (1 - parameters.alpha) * old_value + parameters.alpha * (
+                            reward + parameters.gamma * next_max)
                 self.q_table[extended_state, action] = new_value
 
 
@@ -205,7 +207,8 @@ def train(init_po_rl_agent: PoRlAgent, po_rl_config: PoRLConfig, po_rl_parameter
 
             old_value = po_rl_agent.q_table[extended_state, action]
             next_max = np.max(po_rl_agent.q_table[next_extended_state])
-            new_value = (1 - po_rl_parameters.alpha) * old_value + po_rl_parameters.alpha * (reward + po_rl_parameters.gamma * next_max)
+            new_value = (1 - po_rl_parameters.alpha) * old_value + po_rl_parameters.alpha * (
+                        reward + po_rl_parameters.gamma * next_max)
             po_rl_agent.q_table[extended_state, action] = new_value
             # TODO maybe subtract curiosity reward here, so we don't add it twice
             # it seems to work better without subtracting, though
@@ -226,7 +229,7 @@ def train(init_po_rl_agent: PoRlAgent, po_rl_config: PoRLConfig, po_rl_parameter
         if episode % 100 == 0:
             print(f"Episode: {episode}")
         if episode <= po_rl_parameters.freeze_automaton_after and episode % po_rl_parameters.update_interval == 0:
-            #rl_samples = rl_samples[-2000:]
+            # rl_samples = rl_samples[-2000:]
             if po_rl_config.curiosity_rew_reduction_mode == "minus":
                 po_rl_parameters.curiosity_reward -= po_rl_config.curiosity_rew_reduction
             else:
@@ -234,7 +237,8 @@ def train(init_po_rl_agent: PoRlAgent, po_rl_config: PoRLConfig, po_rl_parameter
             if po_rl_parameters.curiosity_reward < 0:
                 po_rl_parameters.curiosity_reward = 0
 
-            print(f"Goal reached in {(goal_reached_frequency / po_rl_parameters.update_interval) * 100} percent of the cases in last 1000 ep.")
+            print(
+                f"Goal reached in {(goal_reached_frequency / po_rl_parameters.update_interval) * 100} percent of the cases in last 1000 ep.")
             if po_rl_parameters.early_stopping_threshold and goal_reached_frequency / 10 >= po_rl_parameters.early_stopping_threshold:
                 break
             po_rl_agent.update(rl_samples, po_rl_parameters)
@@ -288,4 +292,5 @@ initial_agent = initialize()
 trained_agent = train(initial_agent, po_rl_config=config, po_rl_parameters=parameters)
 coordinates = evaluate(trained_agent)
 from utils import visualize_episode
-visualize_episode(env,coordinates[0])
+
+visualize_episode(env, coordinates[0])

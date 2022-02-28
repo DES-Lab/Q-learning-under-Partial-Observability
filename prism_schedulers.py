@@ -6,34 +6,31 @@ from aalpy.utils import mdp_2_prism_format
 
 
 class PrismInterface:
-    def __init__(self, dest, model, num_steps=None):
+    def __init__(self, destination, model, num_steps=None):
         self.tmp_dir = Path("tmp_prism")
-        self.dest = dest
+        self.destination = destination
         self.model = model
         self.num_steps = num_steps
-        self.tmp_mdp_file = (self.tmp_dir / f"po_rl_{dest}.prism")
-        # self.tmp_prop_file = f"{self.tmp_dir_name}/po_rl.props"
+        self.tmp_mdp_file = (self.tmp_dir / f"po_rl_{destination}.prism")
         self.current_state = None
         self.tmp_dir.mkdir(exist_ok=True)
         self.prism_property = self.create_mc_query()
         mdp_2_prism_format(self.model, "porl", output_path=self.tmp_mdp_file)
-        self.adv_file_name = (self.tmp_dir.absolute() / f"sched_{dest}.adv")
-        self.concrete_model_name = str(self.tmp_dir.absolute() / f"concrete_model_{dest}")
+        self.adv_file_name = (self.tmp_dir.absolute() / f"sched_{destination}.adv")
+        self.concrete_model_name = str(self.tmp_dir.absolute() / f"concrete_model_{destination}")
         self.property_val = 0
         self.call_prism()
         self.parser = PrismSchedulerParser(self.adv_file_name, self.concrete_model_name + ".lab",
                                            self.concrete_model_name + ".tra")
 
     def create_mc_query(self):
-        prop = f"Pmax=?[F \"{self.dest}\"]" if not self.num_steps else f'Pmax=?[F<{self.num_steps} \"{self.dest}\"]'
+        prop = f"Pmax=?[F \"{self.destination}\"]" if not self.num_steps else f'Pmax=?[F<{self.num_steps} \"{self.destination}\"]'
         return prop
 
     def get_input(self):
         if self.current_state is None:
-            # print("Return none because current state is none")
             return None
         else:
-            # print("Current state is not none")
             if self.current_state not in self.parser.scheduler_dict:
                 return None
             return self.parser.scheduler_dict[self.current_state]
@@ -60,13 +57,13 @@ class PrismInterface:
 
         self.property_val = 0
 
-        dest_in_model=False
+        destination_in_model=False
         for s in self.model.states:
-            if s.output == self.dest:
-                dest_in_model = True
+            if s.output == self.destination:
+                destination_in_model = True
                 break
 
-        if not dest_in_model:
+        if not destination_in_model:
             print('SCHEDULER NOT COMPUTED')
             return self.property_val
 
@@ -89,9 +86,7 @@ class PrismInterface:
                     end_index = len(line) if "(" not in line else line.index("(") - 1
                     try:
                         self.property_val = float(line[len("Result: "): end_index])
-                        # if result_val < 1.0:
-                        #    print(f"We cannot reach with absolute certainty, probability is {result_val}")
-                    except:
+                    except ValueError:
                         print("Result parsing error")
         proc.kill()
         return self.property_val
