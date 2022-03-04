@@ -5,7 +5,7 @@ import gym_partially_observable_grid
 import numpy as np
 
 # Make environment deterministic even if it is stochastic
-from utils import visualize_episode, get_samples_reaching_goal
+from utils import visualize_episode, get_samples_reaching_goal, CookieDomain
 
 force_determinism = False
 # Add slip to the observation set (action failed). Only necessary if is_partially_obs is set to True AND you want
@@ -24,6 +24,8 @@ env = gym.make(id='poge-v1',
                is_partially_obs=is_partially_obs,
                one_time_rewards=one_time_rewards,
                step_penalty=0.1)
+
+# env = CookieDomain()
 
 q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
@@ -67,7 +69,7 @@ for i in range(1, num_training_episodes + 1):
 
 print("Training finished.\n")
 
-total_epochs = 0
+total_steps = 0
 episodes = 100
 
 goals_reached = 0
@@ -76,7 +78,7 @@ coordinates_list = []
 
 for _ in range(episodes):
     state = env.reset()
-    epochs, penalties, reward = 0, 0, 0
+    penalties, reward = 0, 0
 
     done = False
 
@@ -85,18 +87,17 @@ for _ in range(episodes):
         action = np.argmax(q_table[state])
         state, reward, done, info = env.step(action)
 
-        episode_locations.append(env.player_location)
+        episode_locations.append(env.env.player_location)
 
         if reward == env.goal_reward and done:
             goals_reached += 1
 
-        epochs += 1
+        total_steps += 1
 
     coordinates_list.append(episode_locations)
-    total_epochs += epochs
 
 print(f"Results after {episodes} episodes:")
 print(f"Total Number of Goal reached: {goals_reached}")
-print(f"Average timesteps per episode: {total_epochs / episodes}")
+print(f"Average timesteps per episode: {total_steps / episodes}")
 
 visualize_episode(env, coordinates_list[0])

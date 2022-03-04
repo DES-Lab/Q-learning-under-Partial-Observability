@@ -104,7 +104,7 @@ class PartiallyObservableWorld(gym.Env):
                         self.state_2_one_hot_map[(x, y)] = counter
                         counter += 1
 
-        if self.rules:
+        if self.rules and self.indicate_slip:
             for state in list(self.state_2_one_hot_map.keys()):
                 for act in self.actions_dict.keys():
                     slip_state = f'{state}_slip_{act}'

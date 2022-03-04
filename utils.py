@@ -4,6 +4,7 @@ import gym
 import gym_partially_observable_grid
 
 from aalpy.base import SUL
+from gym.spaces import Discrete
 
 from prism_schedulers import PrismInterface
 
@@ -21,32 +22,58 @@ class CookieDomain:
         self.possible_cookies_locations = list(self.env.goal_locations.copy())
         self.env.env.goal_locations = set()
 
+        self.goal_reward = self.env.goal_reward
+
         self.button_location = None
         for y, line in enumerate(self.env.abstract_world):
             for x, tile in enumerate(line):
                 if tile == '@':
                     self.button_location = y, x
-
         assert self.button_location
 
+        env_size = self._get_obs_space()
+
+        self.action_space = Discrete(4)
+        self.observation_space = Discrete(env_size)
+
+        self.actions_dict = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
+        self.action_space_to_act_map = {i:k for k,i in self.actions_dict.items()}
+        self.actions = [0, 1, 2, 3]
+
     def reset(self):
-        return self.env.reset()
+        self.env.reset()
+        x, y = self.env.player_location
+        self.env.env.goal_locations = set()
+        return self.env.encode((x,y, self.env.get_observation()))
 
     def step(self, action):
         abstract_obs, rewards, done, _ = self.env.step(action)
         player_x, player_y = self.env.player_location
 
         abstract_obs = self.env.decode(abstract_obs)
+
+        env_state = self.env.encode((player_x,player_y,abstract_obs))
+
         if abstract_obs == 'button':
             self.env.env.goal_locations = {random.choice(self.possible_cookies_locations)}
 
-        return (player_x, player_y, abstract_obs), rewards, done, _
+        # enforce correct behaviour
+        if rewards == self.env.goal_reward and self.env.player_location not in self.env.env.goal_locations:
+            rewards = 0
+
+        return env_state, rewards, done, _
+
+    def encode(self, o):
+        return self.env.encode(o)
+
+    def decode(self, o):
+        return self.env.decode(o)
 
     def play(self):
         def render():
             from copy import deepcopy
             world_copy = deepcopy(self.env.world)
-            for x,y in self.possible_cookies_locations:
+            for x, y in self.possible_cookies_locations:
                 world_copy[x][y] = ' '
             for x, y in self.env.goal_locations:
                 world_copy[x][y] = 'G'
@@ -62,11 +89,38 @@ class CookieDomain:
             render()
             action = input('Action: ', )
             output, reward, done, info = self.step(user_input_map[action])
-            print(f'Output: {output, reward, done, info}')
+            print(f'Output: {self.env.decode(output), reward, done, info}')
+
+    def _get_obs_space(self):
+        counter = 0
+        self.env.env.state_2_one_hot_map = {}
+        # hack to make reset work and abstract steps work
+        x, y = self.env.player_location
+        reset_tile = self.env.abstract_symbol_name_map[self.env.abstract_world[x][y]]
+        self.env.env.state_2_one_hot_map[reset_tile] = 0
+        counter += 1
+        for ab_tile in list(set(self.env.abstract_symbol_name_map.values())):
+            self.env.env.state_2_one_hot_map[ab_tile] = counter
+            counter += 1
+
+        world_to_process = self.env.world
+        for x, row in enumerate(world_to_process):
+            for y, tile in enumerate(row):
+                if tile not in {'#', 'D', 'E'}:
+                    if tile == ' ' or tile == 'G':
+                        abstract_tile = self.env.abstract_symbol_name_map[self.env.abstract_world[x][y]]
+                        self.env.env.state_2_one_hot_map[(x, y, abstract_tile)] = counter
+                        counter += 1
+
+        self.env.env.one_hot_2_state_map = {v: k for k, v in self.env.env.state_2_one_hot_map.items()}
+        self.env.env.observation_space = counter
+
+        return counter
 
 if __name__ == '__main__':
-    cd = CookieDomain()
-    cd.play()
+    ck = CookieDomain()
+    ck.play()
+
 
 class StochasticWorldSUL(SUL):
     def __init__(self, stochastic_world):
@@ -120,7 +174,7 @@ def process_output(env, output, reward=0):
 
     output = env.decode(output)
     if isinstance(output, tuple):
-        output = f'{output[0]}_{output[1]}'
+        output = 's_'.join([str(s) for s in output])
 
     if reward != 0 and reward != env.step_penalty:
         reward = reward if reward > 0 else f'neg_{reward * -1}'
@@ -174,7 +228,7 @@ def visualize_episode(env, coordinate_list, step_time=0.7):
 
     for xy in coordinate_list:
         env.player_location = xy
-        world = deepcopy(env.world)
+        world = deepcopy(env.env.world)
         world[xy[0]][xy[1]] = 'E'
         for line in world:
             print(f'{"".join(line)}')

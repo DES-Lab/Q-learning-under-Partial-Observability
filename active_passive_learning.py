@@ -9,7 +9,7 @@ from aalpy.learning_algs import run_active_Alergia
 from aalpy.utils import save_automaton_to_file
 
 from prism_schedulers import PrismInterface
-from utils import get_initial_data, test_model, process_output
+from utils import get_initial_data, test_model, process_output, CookieDomain
 
 aalpy.paths.path_to_prism = "C:/Program Files/prism-4.7/bin/prism.bat"
 
@@ -100,13 +100,16 @@ def active_passive_experiment(exp_name,
                               sampler_eps_value=0.1,
                               num_new_samples=2000,
                               test_episodes=100):
-    env = gym.make(id='poge-v1',
-                   world_file_path=world,
-                   force_determinism=force_determinism,
-                   indicate_slip=indicate_slip,
-                   is_partially_obs=is_partially_obs,
-                   indicate_wall=indicate_wall,
-                   one_time_rewards=one_time_rewards)
+    if exp_name == 'cookie_domain':
+        env = CookieDomain()
+    else:
+        env = gym.make(id='poge-v1',
+                       world_file_path=world,
+                       force_determinism=force_determinism,
+                       indicate_slip=indicate_slip,
+                       is_partially_obs=is_partially_obs,
+                       indicate_wall=indicate_wall,
+                       one_time_rewards=one_time_rewards)
 
     input_al = list(env.actions_dict.keys())
 
@@ -145,8 +148,17 @@ def experiments_setup(exp_name):
             initial_sample_num=5000,
             active_passive_iterations=5,
             num_new_samples=2000)
+    if exp_name == 'cookie_domain':
+        active_passive_experiment(
+            exp_name='cookie_domain',
+            world='...',
+            initial_sample_num=50000,
+            active_passive_iterations=20,
+            num_new_samples=5000,
+            min_seq_len=20,
+            max_seq_len=100)
     # TODO add other interesting experiments
 
 
 if __name__ == '__main__':
-    experiments_setup('confusing_big_gravity')
+    experiments_setup('cookie_domain')
