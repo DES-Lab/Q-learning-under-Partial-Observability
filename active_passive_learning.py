@@ -152,11 +152,11 @@ def experiments_setup(exp_name):
         active_passive_experiment(
             exp_name='cookie_domain',
             world='...',
-            initial_sample_num=50000,
-            active_passive_iterations=20,
-            num_new_samples=5000,
+            initial_sample_num=20000,
+            active_passive_iterations=10,
+            num_new_samples=2000,
             min_seq_len=20,
-            max_seq_len=100)
+            max_seq_len=75)
     # TODO add other interesting experiments
 
 

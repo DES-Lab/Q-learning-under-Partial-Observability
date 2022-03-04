@@ -37,14 +37,14 @@ class CookieDomain:
         self.observation_space = Discrete(env_size)
 
         self.actions_dict = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
-        self.action_space_to_act_map = {i:k for k,i in self.actions_dict.items()}
+        self.action_space_to_act_map = {i: k for k, i in self.actions_dict.items()}
         self.actions = [0, 1, 2, 3]
 
     def reset(self):
         self.env.reset()
         x, y = self.env.player_location
         self.env.env.goal_locations = set()
-        return self.env.encode((x,y, self.env.get_observation()))
+        return self.env.encode((x, y, self.env.get_observation(), self.is_cookie_in_the_room()))
 
     def step(self, action):
         abstract_obs, rewards, done, _ = self.env.step(action)
@@ -52,7 +52,7 @@ class CookieDomain:
 
         abstract_obs = self.env.decode(abstract_obs)
 
-        env_state = self.env.encode((player_x,player_y,abstract_obs))
+        env_state = self.env.encode((player_x, player_y, abstract_obs, self.is_cookie_in_the_room()))
 
         if abstract_obs == 'button':
             self.env.env.goal_locations = {random.choice(self.possible_cookies_locations)}
@@ -109,13 +109,24 @@ class CookieDomain:
                 if tile not in {'#', 'D', 'E'}:
                     if tile == ' ' or tile == 'G':
                         abstract_tile = self.env.abstract_symbol_name_map[self.env.abstract_world[x][y]]
-                        self.env.env.state_2_one_hot_map[(x, y, abstract_tile)] = counter
-                        counter += 1
+                        # x, y, abstract output, is_cookie_in_the_room
+                        self.env.env.state_2_one_hot_map[(x, y, abstract_tile, False)] = counter
+                        self.env.env.state_2_one_hot_map[(x, y, abstract_tile, True)] = counter + 1
+                        counter += 2
 
         self.env.env.one_hot_2_state_map = {v: k for k, v in self.env.env.state_2_one_hot_map.items()}
-        self.env.env.observation_space = counter
 
         return counter
+
+    def is_cookie_in_the_room(self):
+        if not self.env.goal_locations:
+            return False
+        x, y = self.env.player_location
+        curr_room = self.env.abstract_symbol_name_map[self.env.abstract_world[x][y]]
+        cookie_x, cookie_y = list(self.env.goal_locations)[0]
+        cookie_room = self.env.abstract_symbol_name_map[self.env.abstract_world[cookie_x][cookie_y]]
+        return curr_room == cookie_room
+
 
 if __name__ == '__main__':
     ck = CookieDomain()

@@ -25,7 +25,7 @@ env = gym.make(id='poge-v1',
                one_time_rewards=one_time_rewards,
                step_penalty=0.1)
 
-# env = CookieDomain()
+env = CookieDomain()
 
 q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
@@ -100,4 +100,4 @@ print(f"Results after {episodes} episodes:")
 print(f"Total Number of Goal reached: {goals_reached}")
 print(f"Average timesteps per episode: {total_steps / episodes}")
 
-visualize_episode(env, coordinates_list[0])
+#visualize_episode(env, coordinates_list[0])
