@@ -130,6 +130,7 @@ class CookieDomain:
 
 if __name__ == '__main__':
     ck = CookieDomain()
+    ck.env.env.step_penalty = -1
     ck.play()
 
 
