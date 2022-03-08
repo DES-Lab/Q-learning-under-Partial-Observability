@@ -161,7 +161,8 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             else:
                 action = np.argmax(agent.q_table[extended_state])
 
-            next_state, reward, done, info = env.step(action)
+            next_state, step_reward, done, info = env.step(action)
+            reward = step_reward
             steps += 1
 
             if reward == env.goal_reward and done:
@@ -184,12 +185,8 @@ def train(env_data, agent, num_training_episodes, verbose=True):
 
             agent.q_table[extended_state, action] = new_value
 
-            # subtract curiosity reward here, so we don't add it twice
-            # it seems to work better without subtracting, though
-            reward -= add_reward
-
             # add step to the replay sample
-            rl_sample.append((state, action, next_state, reward, mdp_action, output))
+            rl_sample.append((state, action, next_state, step_reward, mdp_action, output))
 
             state = next_state
             extended_state = agent.get_extended_state(state)
@@ -280,7 +277,7 @@ def experiment_setup(exp_name,
                      step_penalty=0.1,
                      max_ep_len=100,
                      indicate_slip=False,
-                     indicate_wall=False,
+                     indicate_wall=True,
                      one_time_rewards=True,
                      initial_sample_num=10000,
                      num_training_episodes=30000,
@@ -360,34 +357,34 @@ def experiment(exp_name):
                          force_determinism=False,
                          goal_reward=10,
                          step_penalty=0.1,
-                         max_ep_len=100,
+                         max_ep_len=150,
                          one_time_rewards=True,
                          initial_sample_num=10000,
-                         num_training_episodes=30000,
+                         num_training_episodes=50000,
                          min_seq_len=30,
                          max_seq_len=100,
                          update_interval=1000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=None,
+                         freeze_after_ep=30000,
                          verbose=True,
                          test_episodes=100)
     if exp_name == 'gravity':
-        experiment_setup('world1',
+        experiment_setup('gravity',
                          'worlds/confusing_big_gravity.txt',
                          is_partially_obs=True,
                          force_determinism=False,
-                         goal_reward=60,
-                         step_penalty=0.5,
+                         goal_reward=10,
+                         step_penalty=0.1,
                          max_ep_len=100,
                          one_time_rewards=True,
                          initial_sample_num=10000,
                          num_training_episodes=20000,
                          update_interval=1000,
-                         early_stopping_threshold=0.95,
-                         freeze_after_ep=None,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=10000,
                          verbose=True,
                          test_episodes=100)
 
 
 if __name__ == '__main__':
-    experiment('world2')
+    experiment('gravity')
