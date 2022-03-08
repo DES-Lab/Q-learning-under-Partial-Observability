@@ -6,11 +6,15 @@ import gym_partially_observable_grid
 from aalpy.learning_algs import run_Alergia
 
 import numpy as np
+from aalpy.utils import save_automaton_to_file
 
 from utils import get_initial_data
 
 
-class PoRlAgent:
+class PartiallyObservableRlAgent:
+    """
+    Reinforcement learning agent that can make decisions in (extremely) partially observable environment.
+    """
     def __init__(self,
                  aut_model,
                  aal_samples,
@@ -24,8 +28,8 @@ class PoRlAgent:
                  freeze_after_ep=0,
                  verbose=False):
 
-        self.aut_model = aut_model
-        self.aal_samples = aal_samples
+        self.automaton_model = aut_model
+        self.automata_learning_samples = aal_samples
         # parameters
         self.initial_epsilon = epsilon
         self.epsilon = epsilon
@@ -49,6 +53,7 @@ class PoRlAgent:
         self.abstract_observation_space = abstract_observation_space
         self.action_space = action_space
 
+        # helper variables and q_table
         self.model_state_ids = dict([(v, k) for k, v in enumerate(aut_model.states)])
         self.n_model_states = len(aut_model.states)
         # potentially have only n_states*2 x |actions|
@@ -57,41 +62,63 @@ class PoRlAgent:
         self.unknown_model_state = False
 
     def update_model(self):
-        new_model = run_Alergia(self.aal_samples, automaton_type="mdp", print_info=self.verbose)
+        """
+        With all observed samples constructs the new model with the ALERGIA algorithm.
+        State space of learned model is used to extend the q-table.
+        """
+        new_model = run_Alergia(self.automata_learning_samples, automaton_type="mdp", print_info=self.verbose)
         new_n_model_states = len(new_model.states)
 
-        self.aut_model = new_model
+        self.automaton_model = new_model
         self.n_model_states = new_n_model_states
-        self.model_state_ids = dict([(v, k) for k, v in enumerate(self.aut_model.states)])
+        self.model_state_ids = dict([(v, k) for k, v in enumerate(self.automaton_model.states)])
         # potentially have only n_states*2 x |actions|
         self.q_table = np.zeros([self.abstract_observation_space * self.n_model_states * 2, self.action_space])
 
     def reset_aut(self):
+        """
+        Reset automaton state to the initial_state.
+        This is done so that we can trace the episode starting from the initial state in the model.
+        """
         self.unknown_model_state = False
-        self.aut_model.reset_to_initial()
-        self.model_state = self.aut_model.current_state
+        self.automaton_model.reset_to_initial()
+        self.model_state = self.automaton_model.current_state
 
     def get_extended_state(self, rl_state):
+        """
+        Given the state_obtained by the environment and current automaton state,
+        return the extended state which combines them.
+        """
         model_state_id = self.model_state_ids[self.model_state]
         extended_state = model_state_id * self.abstract_observation_space + rl_state
         if self.unknown_model_state:
             extended_state += self.n_model_states * self.abstract_observation_space
         return extended_state
 
-    def perform_aut_step(self, mdp_action, output, curiosity_reward):
+    def automaton_step(self, mdp_action, output, curiosity_reward):
+        """
+        Perform a step on the learned automaton. Based on performed action and observed output.
+        Returns the curiosity reward if action/output combination is not defined for the current state, and if
+        the curiosity reward is defined.
+
+        """
         step_possible = False
         additional_reward = 0
         if not self.unknown_model_state:
-            step_possible = self.aut_model.step_to(mdp_action, output) is not None
+            step_possible = self.automaton_model.step_to(mdp_action, output) is not None
         if not step_possible and not self.unknown_model_state:
             if self.curiosity_enabled:
                 additional_reward += curiosity_reward
             self.unknown_model_state = True
         elif step_possible:
-            self.model_state = self.aut_model.current_state
+            self.model_state = self.automaton_model.current_state
         return additional_reward
 
     def replay_traces(self, rl_samples):
+        """
+        Relays all episodes on the extended q-table. This way values in the extended
+        q-table are updated without interaction with the environment.
+        """
         if self.verbose:
             print('Replaying traces')
         for sample in rl_samples:
@@ -101,7 +128,7 @@ class PoRlAgent:
                 extended_state = self.get_extended_state(state)
 
                 # MDP step
-                curiosity_reward = self.perform_aut_step(mdp_action, output, self.curiosity_reward)
+                curiosity_reward = self.automaton_step(mdp_action, output, self.curiosity_reward)
                 next_extended_state = self.get_extended_state(next_state)
 
                 reward += curiosity_reward
@@ -114,6 +141,10 @@ class PoRlAgent:
 
     def set_curiosity_params(self, init_curiosity_rew=2, curiosity_rew_reduction=0.9,
                              curiosity_rew_reduction_mode='mult'):
+        """
+        Define values for curiosity parameter.
+        If this function is called during training curiosity rewards will be added.
+        """
         self.curiosity_enabled = True
         self.init_curiosity_rew = init_curiosity_rew
         self.curiosity_reward = init_curiosity_rew
@@ -121,6 +152,11 @@ class PoRlAgent:
         self.curiosity_rew_reduction_mode = curiosity_rew_reduction_mode
 
     def update_epsilon(self, current_episode, num_training_episodes, target_value=0.1):
+        """
+        Updates the current value of epsilon. Value of epsilon decreases as the training progresses.
+        This ensured more random sampling at the beginning, and as the training progresses sampling will become more
+        and more optimal (up to target_value).
+        """
         if self.freeze_automaton_after:
             divisor = min(self.freeze_automaton_after, num_training_episodes)
         else:
@@ -137,6 +173,9 @@ class PoRlAgent:
 
 
 def train(env_data, agent, num_training_episodes, verbose=True):
+    """
+    Trains a partially-observable q-agent.
+    """
     if verbose:
         print('Training started')
 
@@ -145,6 +184,8 @@ def train(env_data, agent, num_training_episodes, verbose=True):
     rl_samples = []
     goal_reached_frequency = 0
     for episode in range(1, num_training_episodes + 1):
+
+        # reset environment and agent(its automaton) state
         state = env.reset()
         agent.reset_aut()
 
@@ -156,27 +197,32 @@ def train(env_data, agent, num_training_episodes, verbose=True):
         rl_sample = []
 
         while not done:
+            # Choose greedy or random action
             if random.random() < agent.epsilon:
                 action = env.action_space.sample()
             else:
                 action = np.argmax(agent.q_table[extended_state])
 
+            # perform action on the env
             next_state, step_reward, done, info = env.step(action)
-            reward = step_reward
             steps += 1
 
-            if reward == env.goal_reward and done:
+            # is goal reached?
+            if step_reward == env.goal_reward and done:
                 goal_reached_frequency += 1
 
-            # step in MDP
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
 
-            add_reward = agent.perform_aut_step(mdp_action, output, agent.curiosity_reward)
-            reward += add_reward
+            # perform a step in the learned automaton (in the agent)
+            add_reward = agent.automaton_step(mdp_action, output, agent.curiosity_reward)
+            # if curiosity reward is present add it to the reward
+            reward = step_reward + add_reward
 
+            # append input/action and output in a automata learning sample
             sample.append((mdp_action, output))
 
+            # update the extended q-table
             next_extended_state = agent.get_extended_state(next_state)
             old_value = agent.q_table[extended_state, action]
             next_max = np.max(agent.q_table[next_extended_state])
@@ -186,6 +232,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             agent.q_table[extended_state, action] = new_value
 
             # add step to the replay sample
+            # ignore curiosity reward to avid bias in later stages
             rl_sample.append((state, action, next_state, step_reward, mdp_action, output))
 
             state = next_state
@@ -194,15 +241,18 @@ def train(env_data, agent, num_training_episodes, verbose=True):
         # update epsilon value
         agent.update_epsilon(episode, num_training_episodes)
 
+        # If freezing is present, remove the curiously reward
         if agent.freeze_automaton_after and episode > agent.freeze_automaton_after:
             agent.curiosity_reward = 0
 
         # add episode to memory for automata learning and q-table replaying
-        agent.aal_samples.append(sample)
+        agent.automata_learning_samples.append(sample)
         rl_samples.append(rl_sample)
 
+        # Update interval (for model learning and q-table extension)
         if episode % agent.update_interval == 0:
             if agent.curiosity_enabled:
+                # update curiosity values
                 if agent.curiosity_rew_reduction_mode == "minus":
                     agent.curiosity_reward -= agent.curiosity_rew_reduction
                 else:
@@ -211,7 +261,9 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                 if agent.curiosity_reward < 0:
                     agent.curiosity_reward = 0
 
-            if agent.early_stopping_threshold and (goal_reached_frequency / agent.update_interval) >= agent.early_stopping_threshold:
+            # Early stopping
+            if agent.early_stopping_threshold and (
+                    goal_reached_frequency / agent.update_interval) >= agent.early_stopping_threshold:
                 print('Early stopping threshold exceeded, training stopped.')
                 break
 
@@ -225,7 +277,10 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                           f"percent of the cases in last {agent.update_interval} ep.")
 
                     print('============== Updating model ==============')
+
+                # Update the model by running ALERGIA on all samples
                 agent.update_model()
+                # Based on the updated model extend the q-table
                 agent.replay_traces(rl_samples)
 
             goal_reached_frequency = 0
@@ -234,7 +289,10 @@ def train(env_data, agent, num_training_episodes, verbose=True):
     return agent
 
 
-def evaluate(env_data, po_rl_agent: PoRlAgent, episodes=100):
+def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100):
+    """
+    Evaluates the partially-observable q-agent.
+    """
     env, input_al, reverse_action_dict, env.observation_space.n = env_data
 
     total_steps = 0
@@ -259,7 +317,7 @@ def evaluate(env_data, po_rl_agent: PoRlAgent, episodes=100):
             output = env.decode(state)
             mdp_action = reverse_action_dict[action]
 
-            po_rl_agent.perform_aut_step(mdp_action, output, 0)
+            po_rl_agent.automaton_step(mdp_action, output, 0)
 
             if reward == env.goal_reward and done:
                 goals_reached += 1
@@ -295,7 +353,6 @@ def experiment_setup(exp_name,
                      curiosity_reward=None,
                      curiosity_reward_reduction=None,
                      curiosity_rew_reduction_mode=None):
-
     env = gym.make(id='poge-v1',
                    world_file_path=world,
                    force_determinism=force_determinism,
@@ -317,17 +374,18 @@ def experiment_setup(exp_name,
                                        min_seq_len=min_seq_len, max_seq_len=max_seq_len)
     model = run_Alergia(initial_samples, automaton_type="mdp", print_info=verbose)
 
-    agent = PoRlAgent(model,
-                      initial_samples,
-                      env.observation_space.n,
-                      env.action_space.n,
-                      update_interval=update_interval,
-                      epsilon=epsilon,
-                      alpha=alpha,
-                      gamma=gamma,
-                      early_stopping_threshold=early_stopping_threshold,
-                      freeze_after_ep=freeze_after_ep,
-                      verbose=verbose)
+    agent = PartiallyObservableRlAgent(model,
+                                       initial_samples,
+                                       env.observation_space.n,
+                                       env.action_space.n,
+                                       update_interval=update_interval,
+                                       epsilon=epsilon,
+                                       alpha=alpha,
+                                       gamma=gamma,
+                                       early_stopping_threshold=early_stopping_threshold,
+                                       freeze_after_ep=freeze_after_ep,
+                                       verbose=verbose)
+
     if curiosity_reward:
         assert curiosity_reward_reduction is not None and curiosity_rew_reduction_mode is not None
         agent.set_curiosity_params(curiosity_reward, curiosity_reward_reduction, curiosity_rew_reduction_mode)
@@ -337,6 +395,10 @@ def experiment_setup(exp_name,
                           num_training_episodes=num_training_episodes)
 
     evaluate(env_data, trained_agent, test_episodes)
+
+    if verbose:
+        print(f'Final model constucted during learning saved to {exp_name}.dot')
+    save_automaton_to_file(agent.automaton_model, exp_name)
 
 
 def experiment(exp_name):
