@@ -132,8 +132,9 @@ class PoRlAgent:
             self.epsilon = target_value
 
 
-def train(env_data, agent, num_training_episodes):
-    print('Training started')
+def train(env_data, agent, num_training_episodes, verbose=True):
+    if verbose:
+        print('Training started')
 
     env, input_al, reverse_action_dict, env.observation_space.n = env_data
 
@@ -200,7 +201,6 @@ def train(env_data, agent, num_training_episodes):
         rl_samples.append(rl_sample)
 
         if episode % agent.update_interval == 0:
-
             if agent.curiosity_enabled:
                 if agent.curiosity_rew_reduction_mode == "minus":
                     agent.curiosity_reward -= agent.curiosity_rew_reduction
@@ -217,8 +217,17 @@ def train(env_data, agent, num_training_episodes):
             if agent.freeze_automaton_after is not None and episode > agent.freeze_automaton_after:
                 pass
             else:
+                if verbose:
+                    print(f'============== Update Interval {episode} ==============')
+                    print(f"Goal reached in {(goal_reached_frequency / agent.update_interval) * 100} "
+                          f"percent of the cases in last 1000 ep.")
+
+                    print('============== Updating model ==============')
                 agent.update_model()
                 agent.replay_traces(rl_samples)
+
+            if verbose:
+                print('============== Model updated ===============')
 
             goal_reached_frequency = 0
 
@@ -251,8 +260,6 @@ def evaluate(env_data, po_rl_agent: PoRlAgent, episodes=100):
             output = env.decode(state)
             mdp_action = reverse_action_dict[action]
 
-            print(f"{steps}: {mdp_action} : {output}")
-            # print(f"Performed {mdp_action}")
             po_rl_agent.perform_aut_step(mdp_action, output, 0)
 
             if reward == env.goal_reward and done:
@@ -325,5 +332,6 @@ def experiment_setup(exp_name,
 
     evaluate(env_data, trained_agent, test_episodes)
 
+
 if __name__ == '__main__':
-    experiment_setup(exp_name='test', world='worlds/world2.txt', verbose=True)
+    experiment_setup(exp_name='test', world='worlds/world1+rew.txt', verbose=True)
