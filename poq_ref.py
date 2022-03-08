@@ -23,6 +23,7 @@ class PoRlAgent:
                  early_stopping_threshold=None,
                  freeze_after_ep=0,
                  verbose=False):
+
         self.aut_model = aut_model
         self.aal_samples = aal_samples
         # parameters
@@ -126,10 +127,13 @@ class PoRlAgent:
             divisor = num_training_episodes
 
         decrement = (self.initial_epsilon - target_value) / divisor
-        if self.freeze_automaton_after and current_episode < self.freeze_automaton_after:
-            self.epsilon -= decrement
+        if self.freeze_automaton_after:
+            if current_episode < self.freeze_automaton_after:
+                self.epsilon -= decrement
+            else:
+                self.epsilon = target_value
         else:
-            self.epsilon = target_value
+            self.epsilon -= decrement
 
 
 def train(env_data, agent, num_training_episodes, verbose=True):
@@ -210,7 +214,8 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                 if agent.curiosity_reward < 0:
                     agent.curiosity_reward = 0
 
-            if agent.early_stopping_threshold and goal_reached_frequency / 10 >= agent.early_stopping_threshold:
+            if agent.early_stopping_threshold and (goal_reached_frequency / agent.update_interval) >= agent.early_stopping_threshold:
+                print('Early stopping threshold exceeded, training stopped.')
                 break
 
             # if freezing is enabled do not update the model
@@ -219,15 +224,12 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             else:
                 if verbose:
                     print(f'============== Update Interval {episode} ==============')
-                    print(f"Goal reached in {(goal_reached_frequency / agent.update_interval) * 100} "
-                          f"percent of the cases in last 1000 ep.")
+                    print(f"Goal reached in {round((goal_reached_frequency / agent.update_interval) * 100, 2)} "
+                          f"percent of the cases in last {agent.update_interval} ep.")
 
                     print('============== Updating model ==============')
                 agent.update_model()
                 agent.replay_traces(rl_samples)
-
-            if verbose:
-                print('============== Model updated ===============')
 
             goal_reached_frequency = 0
 
@@ -281,10 +283,11 @@ def experiment_setup(exp_name,
                      indicate_wall=False,
                      one_time_rewards=True,
                      initial_sample_num=10000,
-                     num_training_episodes=20000,
+                     num_training_episodes=30000,
                      min_seq_len=10,
                      max_seq_len=50,
                      update_interval=1000,
+                     # initial epsilon value that will decrease to 0.1 during training
                      epsilon=0.9,
                      alpha=0.1,
                      gamma=0.9,
@@ -333,5 +336,58 @@ def experiment_setup(exp_name,
     evaluate(env_data, trained_agent, test_episodes)
 
 
+def experiment(exp_name):
+    if exp_name == 'world1':
+        experiment_setup('world1',
+                         'worlds/world1+rew.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=10,
+                         step_penalty=0.1,
+                         max_ep_len=100,
+                         one_time_rewards=True,
+                         initial_sample_num=4000,
+                         num_training_episodes=10000,
+                         update_interval=1000,
+                         early_stopping_threshold=None,
+                         freeze_after_ep=None,
+                         verbose=True,
+                         test_episodes=100)
+    if exp_name == 'world2':
+        experiment_setup('world2',
+                         'worlds/world2.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=10,
+                         step_penalty=0.1,
+                         max_ep_len=100,
+                         one_time_rewards=True,
+                         initial_sample_num=10000,
+                         num_training_episodes=30000,
+                         min_seq_len=30,
+                         max_seq_len=100,
+                         update_interval=1000,
+                         early_stopping_threshold=None,
+                         freeze_after_ep=None,
+                         verbose=True,
+                         test_episodes=100)
+    if exp_name == 'gravity':
+        experiment_setup('world1',
+                         'worlds/confusing_big_gravity.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=60,
+                         step_penalty=0.5,
+                         max_ep_len=100,
+                         one_time_rewards=True,
+                         initial_sample_num=10000,
+                         num_training_episodes=20000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.95,
+                         freeze_after_ep=None,
+                         verbose=True,
+                         test_episodes=100)
+
+
 if __name__ == '__main__':
-    experiment_setup(exp_name='test', world='worlds/world1+rew.txt', verbose=True)
+    experiment('world2')
