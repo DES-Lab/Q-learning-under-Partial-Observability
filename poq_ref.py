@@ -291,7 +291,10 @@ def experiment_setup(exp_name,
                      early_stopping_threshold=None,
                      freeze_after_ep=None,
                      verbose=False,
-                     test_episodes=100):
+                     test_episodes=100,
+                     curiosity_reward=None,
+                     curiosity_reward_reduction=None,
+                     curiosity_rew_reduction_mode=None):
 
     env = gym.make(id='poge-v1',
                    world_file_path=world,
@@ -325,6 +328,9 @@ def experiment_setup(exp_name,
                       early_stopping_threshold=early_stopping_threshold,
                       freeze_after_ep=freeze_after_ep,
                       verbose=verbose)
+    if curiosity_reward:
+        assert curiosity_reward_reduction is not None and curiosity_rew_reduction_mode is not None
+        agent.set_curiosity_params(curiosity_reward, curiosity_reward_reduction, curiosity_rew_reduction_mode)
 
     trained_agent = train(env_data,
                           agent,
@@ -360,14 +366,18 @@ def experiment(exp_name):
                          max_ep_len=150,
                          one_time_rewards=True,
                          initial_sample_num=10000,
-                         num_training_episodes=50000,
+                         num_training_episodes=30000,
                          min_seq_len=30,
                          max_seq_len=100,
                          update_interval=1000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=30000,
+                         freeze_after_ep=15000,
                          verbose=True,
-                         test_episodes=100)
+                         test_episodes=100,
+                         epsilon=0.5,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
         experiment_setup('gravity',
                          'worlds/confusing_big_gravity.txt',
@@ -383,7 +393,12 @@ def experiment(exp_name):
                          early_stopping_threshold=0.98,
                          freeze_after_ep=10000,
                          verbose=True,
-                         test_episodes=100)
+                         test_episodes=100,
+                         epsilon=0.5,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
 
 
 if __name__ == '__main__':
