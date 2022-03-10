@@ -181,9 +181,9 @@ def train(env_data, agent, num_training_episodes, verbose=True):
         print('Training started')
 
     env, input_al, reverse_action_dict, env.observation_space.n = env_data
-
+    frozen = False
     rl_samples = []
-    # goal_reached_frequency = 0
+    goal_reached_frequency = 0
     for episode in range(1, num_training_episodes + 1):
 
         # reset environment and agent(its automaton) state
@@ -209,8 +209,8 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             steps += 1
 
             # # is goal reached?
-            # if step_reward == env.goal_reward and done:
-            #     goal_reached_frequency += 1
+            if step_reward == env.goal_reward and done:
+                goal_reached_frequency += 1
 
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
@@ -261,7 +261,8 @@ def train(env_data, agent, num_training_episodes, verbose=True):
 
                 if agent.curiosity_reward < 0:
                     agent.curiosity_reward = 0
-
+            print(f"Goal reached in {(goal_reached_frequency/agent.update_interval) * 100} "
+                  f"percent of the cases during training.")
             # Early stopping
             goaL_reached = evaluate(env_data, agent, verbose=False)
             if agent.early_stopping_threshold:
@@ -270,7 +271,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                     break
 
             # if freezing is enabled do not update the model
-            if agent.freeze_automaton_after is not None and episode > agent.freeze_automaton_after:
+            if frozen:
                 pass
             else:
                 if verbose:
@@ -282,6 +283,9 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                 agent.update_model()
                 # Based on the updated model extend the q-table
                 agent.replay_traces(rl_samples)
+
+                if agent.freeze_automaton_after is not None and episode > agent.freeze_automaton_after:
+                    frozen = True
 
             goal_reached_frequency = 0
 
@@ -423,25 +427,25 @@ def experiment(exp_name):
                          test_episodes=100)
     if exp_name == 'world2':
         experiment_setup('world2',
-                         'worlds/world2.txt',
+                         'worlds/world2-reward.txt',
                          is_partially_obs=True,
                          force_determinism=False,
                          goal_reward=10,
-                         step_penalty=0.1,
+                         step_penalty=.11,
                          max_ep_len=150,
-                         one_time_rewards=True,
+                         one_time_rewards=False,
                          initial_sample_num=10000,
-                         num_training_episodes=30000,
+                         num_training_episodes=80000,
                          min_seq_len=30,
                          max_seq_len=100,
-                         update_interval=1000,
+                         update_interval=5000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=15000,
+                         freeze_after_ep=50000,
                          verbose=True,
                          test_episodes=100,
                          epsilon=0.5,
-                         curiosity_reward=10,
-                         curiosity_reward_reduction=0.9,
+                         curiosity_reward=5,
+                         curiosity_reward_reduction=0.8,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
         experiment_setup('gravity',
