@@ -15,6 +15,7 @@ class PartiallyObservableRlAgent:
     """
     Reinforcement learning agent that can make decisions in (extremely) partially observable environment.
     """
+
     def __init__(self,
                  aut_model,
                  aal_samples,
@@ -182,7 +183,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
     env, input_al, reverse_action_dict, env.observation_space.n = env_data
 
     rl_samples = []
-    goal_reached_frequency = 0
+    # goal_reached_frequency = 0
     for episode in range(1, num_training_episodes + 1):
 
         # reset environment and agent(its automaton) state
@@ -207,9 +208,9 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             next_state, step_reward, done, info = env.step(action)
             steps += 1
 
-            # is goal reached?
-            if step_reward == env.goal_reward and done:
-                goal_reached_frequency += 1
+            # # is goal reached?
+            # if step_reward == env.goal_reward and done:
+            #     goal_reached_frequency += 1
 
             output = env.decode(next_state)
             mdp_action = reverse_action_dict[action]
@@ -262,10 +263,11 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                     agent.curiosity_reward = 0
 
             # Early stopping
-            if agent.early_stopping_threshold and (
-                    goal_reached_frequency / agent.update_interval) >= agent.early_stopping_threshold:
-                print('Early stopping threshold exceeded, training stopped.')
-                break
+            goaL_reached = evaluate(env_data, agent, verbose=False)
+            if agent.early_stopping_threshold:
+                if goaL_reached >= agent.early_stopping_threshold:
+                    print('Early stopping threshold exceeded, training stopped.')
+                    break
 
             # if freezing is enabled do not update the model
             if agent.freeze_automaton_after is not None and episode > agent.freeze_automaton_after:
@@ -273,9 +275,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             else:
                 if verbose:
                     print(f'============== Update Interval {episode} ==============')
-                    print(f"Goal reached in {round((goal_reached_frequency / agent.update_interval) * 100, 2)} "
-                          f"percent of the cases in last {agent.update_interval} ep.")
-
+                    print(f"Goal reached in {round(goaL_reached * 100, 2)} % of test episodes.")
                     print('============== Updating model ==============')
 
                 # Update the model by running ALERGIA on all samples
@@ -289,7 +289,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
     return agent
 
 
-def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100):
+def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, verbose=True):
     """
     Evaluates the partially-observable q-agent.
     """
@@ -322,9 +322,12 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100):
             if reward == env.goal_reward and done:
                 goals_reached += 1
 
-    print(f"Results after {episodes} episodes:")
-    print(f"Total Number of Goal reached: {goals_reached}")
-    print(f"Average timesteps per episode: {total_steps / episodes}")
+    if verbose:
+        print(f"Results after {episodes} episodes:")
+        print(f"Total Number of Goal reached: {goals_reached}")
+        print(f"Average timesteps per episode: {total_steps / episodes}")
+
+    return goals_reached / episodes
 
 
 def experiment_setup(exp_name,
@@ -397,7 +400,7 @@ def experiment_setup(exp_name,
     evaluate(env_data, trained_agent, test_episodes)
 
     if verbose:
-        print(f'Final model constucted during learning saved to {exp_name}.dot')
+        print(f'Final model constructed during learning saved to {exp_name}.dot')
     save_automaton_to_file(agent.automaton_model, exp_name)
 
 
@@ -464,4 +467,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('gravity')
+    experiment('world2')
