@@ -264,7 +264,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             print(f"Goal reached in {(goal_reached_frequency/agent.update_interval) * 100} "
                   f"percent of the cases during training.")
             # Early stopping
-            goaL_reached = evaluate(env_data, agent, verbose=False)
+            goaL_reached = evaluate(env_data, agent, verbose=True)
             if agent.early_stopping_threshold:
                 if goaL_reached >= agent.early_stopping_threshold:
                     print('Early stopping threshold exceeded, training stopped.')
@@ -301,6 +301,7 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, ve
 
     total_steps = 0
     goals_reached = 0
+    calculative_reward = 0
 
     for eval_ep in range(episodes):
         state = env.reset()
@@ -316,6 +317,7 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, ve
 
             state, reward, done, info = env.step(action)
             total_steps += 1
+            calculative_reward += reward
 
             # step in MDP
             output = env.decode(state)
@@ -327,9 +329,10 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, ve
                 goals_reached += 1
 
     if verbose:
-        print(f"Results after {episodes} episodes:")
-        print(f"Total Number of Goal reached: {goals_reached}")
-        print(f"Average timesteps per episode: {total_steps / episodes}")
+        print(f"Evaluation performed on {episodes} episodes.")
+        print(f"Total Number of Goal reached  : {goals_reached}")
+        print(f"Average reward per episode    : {round(calculative_reward / episodes, 2)}")
+        print(f"Average timesteps per episode : {total_steps / episodes}")
 
     return goals_reached / episodes
 
@@ -471,4 +474,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('world2')
+    experiment('world1')
