@@ -27,7 +27,8 @@ class PartiallyObservableRlAgent:
                  gamma=0.9,
                  early_stopping_threshold=None,
                  freeze_after_ep=0,
-                 verbose=False):
+                 verbose=False,
+                 re_init_epsilon=True):
 
         self.automaton_model = aut_model
         self.automata_learning_samples = aal_samples
@@ -61,6 +62,7 @@ class PartiallyObservableRlAgent:
         self.q_table = np.zeros([self.abstract_observation_space * self.n_model_states * 2, self.action_space])
         self.model_state = None
         self.unknown_model_state = False
+        self.re_init_epsilon = re_init_epsilon
 
     def update_model(self):
         """
@@ -159,12 +161,17 @@ class PartiallyObservableRlAgent:
         and more optimal (up to target_value).
         """
         if self.freeze_automaton_after:
-            divisor = min(self.freeze_automaton_after, num_training_episodes)
+            if self.re_init_epsilon and current_episode > self.freeze_automaton_after:
+                divisor = (num_training_episodes - self.freeze_automaton_after)
+                if (self.epsilon - target_value) < 1e-4:
+                    self.epsilon = self.initial_epsilon
+            else:
+                divisor = min(self.freeze_automaton_after, num_training_episodes)
         else:
             divisor = num_training_episodes
 
         decrement = (self.initial_epsilon - target_value) / divisor
-        if self.freeze_automaton_after:
+        if self.freeze_automaton_after and not self.re_init_epsilon:
             if current_episode < self.freeze_automaton_after:
                 self.epsilon -= decrement
             else:
@@ -284,7 +291,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
                 # Based on the updated model extend the q-table
                 agent.replay_traces(rl_samples)
 
-                if agent.freeze_automaton_after is not None and episode > agent.freeze_automaton_after:
+                if agent.freeze_automaton_after is not None and episode >= agent.freeze_automaton_after:
                     frozen = True
 
             goal_reached_frequency = 0
@@ -358,6 +365,7 @@ def experiment_setup(exp_name,
                      gamma=0.9,
                      early_stopping_threshold=None,
                      freeze_after_ep=None,
+                     re_init_epsilon=True,
                      verbose=False,
                      test_episodes=100,
                      curiosity_reward=None,
@@ -394,7 +402,8 @@ def experiment_setup(exp_name,
                                        gamma=gamma,
                                        early_stopping_threshold=early_stopping_threshold,
                                        freeze_after_ep=freeze_after_ep,
-                                       verbose=verbose)
+                                       verbose=verbose,
+                                       re_init_epsilon=re_init_epsilon)
 
     if curiosity_reward:
         assert curiosity_reward_reduction is not None and curiosity_rew_reduction_mode is not None
@@ -414,13 +423,13 @@ def experiment_setup(exp_name,
 def experiment(exp_name):
     if exp_name == 'world1':
         experiment_setup('world1',
-                         'worlds/world1+rew.txt',
+                         'worlds/world1.txt',
                          is_partially_obs=True,
                          force_determinism=False,
                          goal_reward=10,
                          step_penalty=0.1,
                          max_ep_len=100,
-                         one_time_rewards=True,
+                         one_time_rewards=False,
                          initial_sample_num=4000,
                          num_training_episodes=10000,
                          update_interval=1000,
@@ -428,27 +437,49 @@ def experiment(exp_name):
                          freeze_after_ep=None,
                          verbose=True,
                          test_episodes=100)
+    if exp_name == 'world2+rew':
+        experiment_setup('world2',
+                         'worlds/world2.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=100,
+                         step_penalty=2,
+                         max_ep_len=250,
+                         one_time_rewards=True,
+                         initial_sample_num=10000,
+                         num_training_episodes=40000,
+                         min_seq_len=30,
+                         max_seq_len=100,
+                         update_interval=1000,
+                         early_stopping_threshold=None,
+                         freeze_after_ep=20000,
+                         verbose=True,
+                         test_episodes=100,
+                         epsilon=0.5,
+                         curiosity_reward=None,
+                         curiosity_reward_reduction=0.99,
+                         curiosity_rew_reduction_mode='mult')
     if exp_name == 'world2':
         experiment_setup('world2',
                          'worlds/world2-reward.txt',
                          is_partially_obs=True,
                          force_determinism=False,
-                         goal_reward=10,
-                         step_penalty=.11,
-                         max_ep_len=150,
+                         goal_reward=100,
+                         step_penalty=2,
+                         max_ep_len=250,
                          one_time_rewards=False,
                          initial_sample_num=10000,
-                         num_training_episodes=80000,
+                         num_training_episodes=100000,
                          min_seq_len=30,
                          max_seq_len=100,
-                         update_interval=5000,
+                         update_interval=1000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=50000,
+                         freeze_after_ep=25000,
                          verbose=True,
                          test_episodes=100,
                          epsilon=0.5,
-                         curiosity_reward=5,
-                         curiosity_reward_reduction=0.8,
+                         curiosity_reward=1,
+                         curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
         experiment_setup('gravity',
@@ -474,4 +505,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('world1')
+    experiment('world2')
