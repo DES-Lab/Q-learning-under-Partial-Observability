@@ -257,7 +257,8 @@ def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max
             i = random.choice(input_al)
             encoded_i = env.actions_dict[i]
             o, r, _, _ = env.step(encoded_i)
-            o = process_output(env, o, r)
+            #o = process_output(env, o, r)
+            o = env.decode(o)
             sample.append((i, o))
         random_samples.append(sample)
     return random_samples
