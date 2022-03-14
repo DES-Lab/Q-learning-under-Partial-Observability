@@ -466,7 +466,7 @@ def experiment(exp_name):
                          force_determinism=False,
                          goal_reward=100,
                          step_penalty=2,
-                         max_ep_len=250,
+                         max_ep_len=150,
                          one_time_rewards=False,
                          initial_sample_num=10000,
                          num_training_episodes=100000,
@@ -477,8 +477,8 @@ def experiment(exp_name):
                          freeze_after_ep=25000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.5,
-                         curiosity_reward=1,
+                         epsilon=0.9,
+                         curiosity_reward=0,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
