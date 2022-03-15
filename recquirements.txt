@@ -1,3 +1,5 @@
 aalpy
 gym
 numpy
+matplotlib
+tikzplotlib
