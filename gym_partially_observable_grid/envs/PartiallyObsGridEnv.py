@@ -82,6 +82,9 @@ class PartiallyObservableWorld(gym.Env):
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Discrete(self._get_obs_space())
 
+        # For statistics
+        self.training_episode = 0
+
     def _get_obs_space(self):
         self.state_2_one_hot_map = {}
         counter = 0
@@ -221,6 +224,7 @@ class PartiallyObservableWorld(gym.Env):
         self.use_stochastic_tiles = True
         self.player_location = self.initial_location[0], self.initial_location[1]
         self.collected_rewards.clear()
+        self.training_episode += 1
         return self.encode(self.get_observation())
 
     def render(self, mode='human'):

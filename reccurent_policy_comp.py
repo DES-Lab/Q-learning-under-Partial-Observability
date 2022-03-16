@@ -57,8 +57,9 @@ class TrainingMonitorCallback(BaseCallback):
         self.data = []
 
     def _on_step(self):
-        if self.n_calls % self.check_freq == 0: # TODO add steps
+        if self.env.envs[0].training_episode % self.check_freq == 0: # TODO add steps
             data = evaluate_ltsm(self.model, self.env, num_episodes=self.check_freq, verbose=False)
+            self.env.envs[0].training_episode -= 100 # subtract eval episodes
             self.data.append(data)
 
 
@@ -72,7 +73,7 @@ poge = gym.make(id='poge-v1',
                 step_penalty=0.1, )
 
 env = DummyVecEnv([lambda: poge])
-training_time_stpes = 1000
+training_time_stpes = 10000
 
 cb = TrainingMonitorCallback(env)
 model = ACER('MlpLstmPolicy', env, n_cpu_tf_sess=None).learn(total_timesteps=training_time_stpes, callback=cb)
