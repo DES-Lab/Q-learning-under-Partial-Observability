@@ -117,7 +117,8 @@ def active_passive_experiment(exp_name,
                             input_al,
                             initial_sample_num=initial_sample_num,
                             min_seq_len=min_seq_len,
-                            max_seq_len=max_seq_len)
+                            max_seq_len=max_seq_len,
+                            incl_rewards=True)
 
     sampler = EpsGreedySampler(input_al,
                                eps=sampler_eps_value,
