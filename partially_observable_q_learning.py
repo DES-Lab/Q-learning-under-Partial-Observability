@@ -28,7 +28,8 @@ class PartiallyObservableRlAgent:
                  early_stopping_threshold=None,
                  freeze_after_ep=0,
                  verbose=False,
-                 re_init_epsilon=True):
+                 re_init_epsilon=True,
+                 linear_epsilon=False):
 
         self.automaton_model = aut_model
         self.automata_learning_samples = aal_samples
@@ -40,6 +41,7 @@ class PartiallyObservableRlAgent:
         self.freeze_automaton_after = freeze_after_ep
         self.update_interval = update_interval
         self.early_stopping_threshold = early_stopping_threshold
+        self.linear_epsilon = linear_epsilon
 
         # curiosity params
         self.curiosity_enabled = False
@@ -170,14 +172,23 @@ class PartiallyObservableRlAgent:
         else:
             divisor = num_training_episodes
 
-        decrement = (self.initial_epsilon - target_value) / divisor
+        if self.linear_epsilon:
+            decrement = (self.initial_epsilon - target_value) / divisor
+        else:
+            decrement = (target_value / self.initial_epsilon)**(1/divisor)
         if self.freeze_automaton_after and not self.re_init_epsilon:
             if current_episode < self.freeze_automaton_after:
-                self.epsilon -= decrement
+                if self.linear_epsilon:
+                    self.epsilon -= decrement
+                else:
+                    self.epsilon *= decrement
             else:
                 self.epsilon = target_value
         else:
-            self.epsilon -= decrement
+            if self.linear_epsilon:
+                self.epsilon -= decrement
+            else:
+                self.epsilon *= decrement
 
 
 def train(env_data, agent, num_training_episodes, verbose=True):
@@ -259,6 +270,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
 
         # Update interval (for model learning and q-table extension)
         if episode % agent.update_interval == 0:
+            print(f"Eps: {agent.epsilon}")
             if agent.curiosity_enabled:
                 # update curiosity values
                 if agent.curiosity_rew_reduction_mode == "minus":
@@ -444,19 +456,19 @@ def experiment(exp_name):
                          force_determinism=False,
                          goal_reward=100,
                          step_penalty=2,
-                         max_ep_len=250,
-                         one_time_rewards=True,
+                         max_ep_len=200,
+                         one_time_rewards=False,
                          initial_sample_num=10000,
-                         num_training_episodes=40000,
+                         num_training_episodes=120000,
                          min_seq_len=30,
                          max_seq_len=100,
                          update_interval=1000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=20000,
+                         freeze_after_ep=40000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.5,
-                         curiosity_reward=None,
+                         epsilon=0.9,
+                         curiosity_reward=2,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'world2':
@@ -466,19 +478,19 @@ def experiment(exp_name):
                          force_determinism=False,
                          goal_reward=100,
                          step_penalty=2,
-                         max_ep_len=150,
+                         max_ep_len=100,
                          one_time_rewards=False,
                          initial_sample_num=10000,
-                         num_training_episodes=100000,
+                         num_training_episodes=120000,
                          min_seq_len=30,
                          max_seq_len=100,
-                         update_interval=1000,
+                         update_interval=2000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=25000,
+                         freeze_after_ep=60000,
                          verbose=True,
                          test_episodes=100,
                          epsilon=0.9,
-                         curiosity_reward=0,
+                         curiosity_reward=2,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
