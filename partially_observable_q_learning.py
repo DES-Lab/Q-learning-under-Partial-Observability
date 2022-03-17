@@ -163,10 +163,10 @@ class PartiallyObservableRlAgent:
         and more optimal (up to target_value).
         """
         if self.freeze_automaton_after:
+            if self.re_init_epsilon and current_episode == self.freeze_automaton_after:
+                self.epsilon = self.initial_epsilon
             if self.re_init_epsilon and current_episode > self.freeze_automaton_after:
                 divisor = (num_training_episodes - self.freeze_automaton_after)
-                if (self.epsilon - target_value) < 1e-4:
-                    self.epsilon = self.initial_epsilon
             else:
                 divisor = min(self.freeze_automaton_after, num_training_episodes)
         else:
@@ -377,7 +377,7 @@ def experiment_setup(exp_name,
                      gamma=0.9,
                      early_stopping_threshold=None,
                      freeze_after_ep=None,
-                     re_init_epsilon=True,
+                     re_init_epsilon=False,
                      verbose=False,
                      test_episodes=100,
                      curiosity_reward=None,
@@ -478,20 +478,20 @@ def experiment(exp_name):
                          force_determinism=False,
                          goal_reward=100,
                          step_penalty=2,
-                         max_ep_len=100,
+                         max_ep_len=400,
                          one_time_rewards=False,
                          initial_sample_num=10000,
-                         num_training_episodes=120000,
+                         num_training_episodes=80000,
                          min_seq_len=30,
                          max_seq_len=100,
                          update_interval=2000,
                          early_stopping_threshold=None,
-                         freeze_after_ep=60000,
+                         freeze_after_ep=20000,
                          verbose=True,
                          test_episodes=100,
                          epsilon=0.9,
-                         curiosity_reward=2,
-                         curiosity_reward_reduction=0.99,
+                         curiosity_reward=None,
+                         curiosity_reward_reduction=0.95,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
         experiment_setup('gravity',
