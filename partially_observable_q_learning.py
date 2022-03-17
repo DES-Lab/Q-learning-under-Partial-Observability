@@ -275,6 +275,13 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
 
         # Update interval (for model learning and q-table extension)
         if episode % agent.update_interval == 0:
+            # Early stopping
+            goal_reached, _ , _ = evaluate(env_data, agent, verbose=True)
+            if agent.early_stopping_threshold:
+                if goal_reached / 100 >= agent.early_stopping_threshold:
+                    print('Early stopping threshold exceeded, training stopped.')
+                    break
+
             print(f"Eps: {agent.epsilon}")
             if agent.curiosity_enabled:
                 # update curiosity values
@@ -287,12 +294,6 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
                     agent.curiosity_reward = 0
             print(f"Goal reached in {(goal_reached_frequency / agent.update_interval) * 100} "
                   f"percent of the cases during training.")
-            # Early stopping
-            goal_reached, _ , _ = evaluate(env_data, agent, verbose=True)
-            if agent.early_stopping_threshold:
-                if goal_reached / 100 >= agent.early_stopping_threshold:
-                    print('Early stopping threshold exceeded, training stopped.')
-                    break
 
             # if freezing is enabled do not update the model
             if frozen:
@@ -520,6 +521,69 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100,
                          epsilon=0.5,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'gravity2':
+        experiment_setup('gravity2',
+                         'worlds/big_gravity_2.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=10,
+                         step_penalty=0.1,
+                         max_ep_len=100,
+                         one_time_rewards=True,
+                         initial_sample_num=10000,
+                         num_training_episodes=20000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=10000,
+                         verbose=True,
+                         test_episodes=100,
+                         epsilon=0.9,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'big_office':
+        experiment_setup('big_office',
+                         'worlds/office_world1.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=100,
+                         step_penalty=0.1,
+                         max_ep_len=100,
+                         one_time_rewards=True,
+                         initial_sample_num=10000,
+                         num_training_episodes=30000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=10000,
+                         verbose=True,
+                         test_episodes=100,
+                         epsilon=0.9,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'corridor':
+        experiment_setup('corridor',
+                         'worlds/corridor.txt',
+                         is_partially_obs=True,
+                         force_determinism=False,
+                         goal_reward=100,
+                         step_penalty=0.1,
+                         max_ep_len=100,
+                         one_time_rewards=True,
+                         initial_sample_num=10000,
+                         num_training_episodes=30000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=12000,
+                         verbose=True,
+                         test_episodes=100,
+                         epsilon=0.8,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
