@@ -2,9 +2,6 @@ import gym
 import numpy as np
 from gym.spaces import Box
 from stable_baselines.common.callbacks import BaseCallback
-from stable_baselines.deepq import MlpPolicy
-
-import gym_partially_observable_grid
 
 from stable_baselines import DQN, A2C, ACKTR
 

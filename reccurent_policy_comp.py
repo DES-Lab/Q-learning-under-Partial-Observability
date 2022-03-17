@@ -1,5 +1,4 @@
 import gym
-import gym_partially_observable_grid
 
 import numpy as np
 from stable_baselines import A2C, ACER, PPO2, ACKTR
