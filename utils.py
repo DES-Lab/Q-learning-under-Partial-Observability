@@ -128,12 +128,6 @@ class CookieDomain:
         return curr_room == cookie_room
 
 
-if __name__ == '__main__':
-    ck = CookieDomain()
-    ck.env.env.step_penalty = -1
-    ck.play()
-
-
 class StochasticWorldSUL(SUL):
     def __init__(self, stochastic_world):
         super().__init__()
@@ -257,7 +251,7 @@ def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max
             i = random.choice(input_al)
             encoded_i = env.actions_dict[i]
             o, r, _, _ = env.step(encoded_i)
-            #o = process_output(env, o, r)
+            # o = process_output(env, o, r)
             o = env.decode(o)
             sample.append((i, o))
         random_samples.append(sample)
@@ -296,3 +290,30 @@ def get_samples_reaching_goal(env, num_samples=10):
     env.use_stochastic_tiles = True
 
     return path_locations
+
+
+def add_statistics_to_file(path_to_world, statistics, statistic_interval_size):
+    import csv
+
+    world_name = path_to_world.split('/')[-1].split('.')[0] + '.csv'
+
+    experiment_setup = statistics.pop(0)
+
+    intervals, goal_reached, avg_reward, avg_step = [], [], [], []
+
+    current_interval = statistic_interval_size
+    for s in statistics:
+        intervals.append(current_interval)
+        goal_reached.append(s[0])
+        avg_reward.append(s[1])
+        avg_step.append(s[2])
+        current_interval += statistic_interval_size
+
+    with open(f'statistics/{world_name}', 'a', newline='') as f:
+        # create the csv writer
+        writer = csv.writer(f)
+        writer.writerow([experiment_setup])
+        writer.writerow(intervals)
+        writer.writerow(goal_reached)
+        writer.writerow(avg_reward)
+        writer.writerow(avg_step)

@@ -1,9 +1,6 @@
-import os
-
 import gym
 import numpy as np
 from stable_baselines import A2C, ACER, PPO2, ACKTR
-from stable_baselines.bench import Monitor
 from stable_baselines.common.callbacks import BaseCallback
 from stable_baselines.common.vec_env import DummyVecEnv
 
@@ -11,14 +8,18 @@ import gym_partially_observable_grid
 
 import tensorflow as tf
 
+from utils import add_statistics_to_file
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+np.seterr(all="ignore")
+
+learning_alg_name = {A2C: 'A2C', ACER: 'ACER', PPO2: 'PPO2', ACKTR: 'ACTOR'}
 
 
 def evaluate_ltsm(model, env, num_episodes=100, verbose=True):
     """
     For DummyVecEnv, LSTM only.
     """
-    all_rewards = []
     steps = 0
     cumulative_reward = 0
     goal_reached = 0
@@ -50,17 +51,42 @@ def evaluate_ltsm(model, env, num_episodes=100, verbose=True):
 
 
 class TrainingMonitorCallback(BaseCallback):
-    def __init__(self, env, check_freq: int = 1000, verbose: int = 1):
+    def __init__(self, env, check_freq: int = 100, verbose: int = 0):
         super().__init__(verbose)
         self.env = env
         self.check_freq = check_freq
         self.data = []
+        self.verbose = True if verbose == 1 else 0
 
     def _on_step(self):
-        if self.env.envs[0].training_episode % self.check_freq == 0: # TODO add steps
-            data = evaluate_ltsm(self.model, self.env, num_episodes=self.check_freq, verbose=False)
-            self.env.envs[0].training_episode -= 100 # subtract eval episodes
+        if self.env.envs[0].training_episode % self.check_freq == 0:
+            if self.verbose:
+                print(f'Training Episode: {self.env.poge_env.training_episode}')
+            data = evaluate_ltsm(self.model, self.env, num_episodes=100, verbose=self.verbose)
+            # self.env.envs[0].training_episode -= check_freq # subtract eval episodes
             self.data.append(data)
+
+
+def lstm_experiment(path_to_world, env, learning_alg, training_steps, interval_size=1000, verbose=False):
+
+    assert learning_alg in {A2C, ACER, PPO2, ACKTR}
+
+    env.training_episode = 0
+
+    env = DummyVecEnv([lambda: poge])
+
+    statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size, verbose=verbose)
+
+    model = ACER('MlpLstmPolicy', env, n_cpu_tf_sess=None)
+    model.learn(total_timesteps=training_steps, callback=statistic_collector)
+
+    exp_setup_str = f'{learning_alg_name[learning_alg]},{training_steps}'
+    statistics = statistic_collector.data
+    statistics.insert(0, exp_setup_str)
+
+    add_statistics_to_file(path_to_world, statistics, interval_size)
+
+    return evaluate_ltsm(model, env)
 
 
 poge = gym.make(id='poge-v1',
@@ -72,11 +98,4 @@ poge = gym.make(id='poge-v1',
                 one_time_rewards=True,
                 step_penalty=0.1, )
 
-env = DummyVecEnv([lambda: poge])
-training_time_stpes = 10000
-
-cb = TrainingMonitorCallback(env)
-model = ACER('MlpLstmPolicy', env, n_cpu_tf_sess=None).learn(total_timesteps=training_time_stpes, callback=cb)
-evaluate_ltsm(model, env, 100)
-
-print(cb.data)
+lstm_experiment('worlds/world1.txt', poge, ACER, 10000)
