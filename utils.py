@@ -128,12 +128,6 @@ class CookieDomain:
         return curr_room == cookie_room
 
 
-if __name__ == '__main__':
-    ck = CookieDomain()
-    ck.env.env.step_penalty = -1
-    ck.play()
-
-
 class StochasticWorldSUL(SUL):
     def __init__(self, stochastic_world):
         super().__init__()
