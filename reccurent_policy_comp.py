@@ -1,14 +1,15 @@
 import gym
+import gym_partially_observable_grid
+
 import numpy as np
 from stable_baselines import A2C, ACER, PPO2, ACKTR
 from stable_baselines.common.callbacks import BaseCallback
 from stable_baselines.common.vec_env import DummyVecEnv
 
-import gym_partially_observable_grid
-
 import tensorflow as tf
 
 from utils import add_statistics_to_file
+from world_repository import get_world
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 np.seterr(all="ignore")
@@ -67,11 +68,10 @@ class TrainingMonitorCallback(BaseCallback):
             self.data.append(data)
 
 
-def lstm_experiment(path_to_world, env, learning_alg, training_steps, interval_size=1000, verbose=False):
-
+def lstm_experiment(poge, learning_alg, training_steps, interval_size=1000, verbose=False):
     assert learning_alg in {A2C, ACER, PPO2, ACKTR}
 
-    env.training_episode = 0
+    poge.training_episode = 0
 
     env = DummyVecEnv([lambda: poge])
 
@@ -84,18 +84,11 @@ def lstm_experiment(path_to_world, env, learning_alg, training_steps, interval_s
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
-    add_statistics_to_file(path_to_world, statistics, interval_size)
+    add_statistics_to_file(env.envs[0].world_file_path, statistics, interval_size)
 
     return evaluate_ltsm(model, env)
 
 
-poge = gym.make(id='poge-v1',
-                world_file_path='worlds/world1.txt',
-                is_partially_obs=True,
-                force_determinism=False,
-                indicate_slip=False,
-                indicate_wall=False,
-                one_time_rewards=True,
-                step_penalty=0.1, )
+env = get_world('gravity')
 
-lstm_experiment('worlds/world1.txt', poge, ACER, 10000)
+lstm_experiment(env, ACER, 10000)

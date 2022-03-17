@@ -9,6 +9,7 @@ import gym_partially_observable_grid
 from stable_baselines import DQN, A2C, ACKTR
 
 from utils import add_statistics_to_file
+from world_repository import get_world
 
 learning_alg_name = {DQN: 'DQN', A2C: 'A2C', ACKTR: 'ACKTR'}
 
@@ -95,7 +96,7 @@ def evaluate_dqn(model, env, num_episodes=100, verbose=True):
     return goal_reached, avg_rew, avg_step
 
 
-def stacked_experiment(path_to_world, poge_env: StackedPoge, learning_alg, training_steps, interval_size=1000,
+def stacked_experiment(poge_env: StackedPoge, learning_alg, training_steps, interval_size=1000,
                        num_frames=5, verbose=False):
     assert learning_alg in {DQN, A2C, ACKTR}
 
@@ -112,19 +113,11 @@ def stacked_experiment(path_to_world, poge_env: StackedPoge, learning_alg, train
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
-    add_statistics_to_file(path_to_world, statistics, interval_size)
+    add_statistics_to_file(poge.world_file_path, statistics, interval_size)
 
     return evaluate_dqn(model, env)
 
 
-if __name__ == '__main__':
-    poge = gym.make(id='poge-v1',
-                    world_file_path='worlds/world2.txt',
-                    is_partially_obs=True,
-                    force_determinism=False,
-                    indicate_slip=False,
-                    indicate_wall=False,
-                    one_time_rewards=True,
-                    step_penalty=0.1)
+poge = get_world('gravity')
 
-    stacked_experiment('worlds/world2.txt', poge, A2C, training_steps=2000 * 100, num_frames=5, verbose=True)
+stacked_experiment(poge, A2C, training_steps=10000 * 100, num_frames=5, verbose=True)
