@@ -56,7 +56,7 @@ is_partially_obs = True
 one_time_rewards = True
 
 env = gym.make(id='poge-v1',
-               world_file_path='worlds/world3.txt',
+               world_file_path='../worlds/world3.txt',
                force_determinism=force_determinism,
                indicate_slip=indicate_slip,
                is_partially_obs=is_partially_obs,

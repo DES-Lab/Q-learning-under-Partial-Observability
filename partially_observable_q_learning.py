@@ -1,14 +1,12 @@
 import random
 
-import gym
-import gym_partially_observable_grid
-
 from aalpy.learning_algs import run_Alergia
 
 import numpy as np
 from aalpy.utils import save_automaton_to_file
 
 from utils import get_initial_data, add_statistics_to_file
+from world_repository import get_world
 
 
 class PartiallyObservableRlAgent:
@@ -378,21 +376,12 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, ve
 
 
 def experiment_setup(exp_name,
-                     world,
-                     is_partially_obs=True,
-                     force_determinism=False,
-                     goal_reward=10,
-                     step_penalty=0.1,
-                     max_ep_len=100,
-                     indicate_slip=False,
-                     indicate_wall=True,
-                     one_time_rewards=True,
+                     env,
                      initial_sample_num=10000,
                      num_training_episodes=30000,
                      min_seq_len=10,
                      max_seq_len=50,
                      update_interval=1000,
-                     # initial epsilon value that will decrease to 0.1 during training
                      initial_epsilon=0.9,
                      target_epsilon=0.1,
                      alergia_epsilon=0.005,
@@ -406,16 +395,6 @@ def experiment_setup(exp_name,
                      curiosity_reward=None,
                      curiosity_reward_reduction=None,
                      curiosity_rew_reduction_mode=None):
-    env = gym.make(id='poge-v1',
-                   world_file_path=world,
-                   force_determinism=force_determinism,
-                   indicate_slip=indicate_slip,
-                   indicate_wall=indicate_wall,
-                   is_partially_obs=is_partially_obs,
-                   one_time_rewards=one_time_rewards,
-                   max_ep_len=max_ep_len,
-                   goal_reward=goal_reward,  # 60 for gravity, 10 for world2
-                   step_penalty=step_penalty)  # 0.5 for gravity, 0.1 for world 2)
 
     input_al = list(env.actions_dict.keys())
     reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
@@ -455,21 +434,16 @@ def experiment_setup(exp_name,
 
     if verbose:
         print(f'Final model constructed during learning saved to {exp_name}.dot')
-    save_automaton_to_file(agent.automaton_model, exp_name)
+    save_automaton_to_file(agent.automaton_model, f'learned_models/{exp_name}')
 
-    add_statistics_to_file(world, statistics, statistic_interval_size=1000)
+    add_statistics_to_file(env.world_file_path, statistics, statistic_interval_size=1000)
 
 
 def experiment(exp_name):
+    env = get_world(exp_name)
     if exp_name == 'world1':
         experiment_setup('world1',
-                         'worlds/world1.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=10,
-                         step_penalty=0.1,
-                         max_ep_len=100,
-                         one_time_rewards=False,
+                         env=env,
                          initial_sample_num=4000,
                          num_training_episodes=10000,
                          update_interval=1000,
@@ -478,14 +452,8 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100)
     if exp_name == 'world2+rew':
-        experiment_setup('world2',
-                         'worlds/world2.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=100,
-                         step_penalty=2,
-                         max_ep_len=200,
-                         one_time_rewards=False,
+        experiment_setup('world2+rew',
+                         env=env,
                          initial_sample_num=10000,
                          num_training_episodes=120000,
                          min_seq_len=30,
@@ -501,13 +469,7 @@ def experiment(exp_name):
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'world2':
         experiment_setup('world2',
-                         'worlds/world2-reward.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=100,
-                         step_penalty=2,
-                         max_ep_len=400,
-                         one_time_rewards=False,
+                         env=env,
                          initial_sample_num=10000,
                          num_training_episodes=80000,
                          min_seq_len=30,
@@ -523,13 +485,7 @@ def experiment(exp_name):
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
         experiment_setup('gravity',
-                         'worlds/confusing_big_gravity.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=10,
-                         step_penalty=0.1,
-                         max_ep_len=100,
-                         one_time_rewards=True,
+                         env=env,
                          initial_sample_num=10000,
                          num_training_episodes=20000,
                          update_interval=1000,
@@ -544,13 +500,7 @@ def experiment(exp_name):
                          )
     if exp_name == 'gravity2':
         experiment_setup('gravity2',
-                         'worlds/big_gravity_2.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=10,
-                         step_penalty=0.1,
-                         max_ep_len=100,
-                         one_time_rewards=True,
+                         env=env,
                          initial_sample_num=10000,
                          num_training_episodes=20000,
                          update_interval=1000,
@@ -565,14 +515,7 @@ def experiment(exp_name):
                          )
     if exp_name == 'big_office':
         experiment_setup('big_office',
-                         'worlds/office_world1.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=100,
-                         step_penalty=0.1,
-                         max_ep_len=100,
-                         one_time_rewards=True,
-                         initial_sample_num=10000,
+                         env=env,
                          num_training_episodes=30000,
                          update_interval=1000,
                          early_stopping_threshold=0.98,
@@ -586,13 +529,7 @@ def experiment(exp_name):
                          )
     if exp_name == 'corridor':
         experiment_setup('corridor',
-                         'worlds/corridor.txt',
-                         is_partially_obs=True,
-                         force_determinism=False,
-                         goal_reward=100,
-                         step_penalty=0.1,
-                         max_ep_len=100,
-                         one_time_rewards=True,
+                         env=env,
                          initial_sample_num=10000,
                          num_training_episodes=30000,
                          update_interval=1000,
@@ -608,4 +545,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('corridor')
+    experiment('world1')

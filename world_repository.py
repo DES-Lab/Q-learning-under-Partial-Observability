@@ -12,6 +12,14 @@ def get_world(world_id):
                        max_ep_len=100,
                        goal_reward=10,
                        step_penalty=0.1)
+    if world_id == 'gravity2':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/big_gravity_2.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=False,
+                       max_ep_len=100,
+                       goal_reward=10,
+                       step_penalty=0.2)
     if world_id == 'corridor':
         env = gym.make(id='poge-v1',
                        world_file_path='worlds/corridor.txt',

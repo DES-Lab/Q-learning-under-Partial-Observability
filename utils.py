@@ -1,12 +1,11 @@
 import random
 from statistics import mean
 import gym
-import gym_partially_observable_grid
 
 from aalpy.base import SUL
 from gym.spaces import Discrete
 
-from prism_schedulers import PrismInterface
+from tried_ideas.prism_schedulers import PrismInterface
 
 
 class CookieDomain:

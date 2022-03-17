@@ -20,7 +20,7 @@ indicate_slip = True
 is_partially_obs = True  # prism will not work with False (need to fix touple type)
 
 world = gym.make(id='poge-v1',
-                 world_file_path='worlds/world0.txt',
+                 world_file_path='../worlds/world0.txt',
                  force_determinism=force_determinism,
                  indicate_slip=indicate_slip,
                  is_partially_obs=is_partially_obs)

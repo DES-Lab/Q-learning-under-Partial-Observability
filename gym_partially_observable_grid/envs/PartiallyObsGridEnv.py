@@ -21,7 +21,7 @@ class PartiallyObservableWorld(gym.Env):
         self.world_file_path = world_file_path
         # Available actions
         self.actions_dict = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
-        self.action_space_to_act_map = {i:k for k,i in self.actions_dict.items()}
+        self.action_space_to_act_map = {i: k for k, i in self.actions_dict.items()}
         self.actions = [0, 1, 2, 3]
 
         parser = PartiallyObsGridworldParser(world_file_path)
