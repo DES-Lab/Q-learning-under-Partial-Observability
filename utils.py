@@ -298,3 +298,30 @@ def get_samples_reaching_goal(env, num_samples=10):
     env.use_stochastic_tiles = True
 
     return path_locations
+
+
+def add_statistics_to_file(path_to_world, statistics, statistic_interval_size):
+    import csv
+
+    world_name = path_to_world.split('/')[-1].split('.')[0] + '.csv'
+
+    experiment_setup = statistics.pop(0)
+
+    intervals, goal_reached, avg_reward, avg_step = [], [], [], []
+
+    current_interval = statistic_interval_size
+    for s in statistics:
+        intervals.append(current_interval)
+        goal_reached.append(s[0])
+        avg_reward.append(s[1])
+        avg_step.append(s[2])
+        current_interval += statistic_interval_size
+
+    with open(f'statistics/{world_name}', 'a', newline='') as f:
+        # create the csv writer
+        writer = csv.writer(f)
+        writer.writerow([experiment_setup])
+        writer.writerow(intervals)
+        writer.writerow(goal_reached)
+        writer.writerow(avg_reward)
+        writer.writerow(avg_step)

@@ -8,7 +8,7 @@ from aalpy.learning_algs import run_Alergia
 import numpy as np
 from aalpy.utils import save_automaton_to_file
 
-from utils import get_initial_data
+from utils import get_initial_data, add_statistics_to_file
 
 
 class PartiallyObservableRlAgent:
@@ -175,7 +175,7 @@ class PartiallyObservableRlAgent:
         if self.linear_epsilon:
             decrement = (self.initial_epsilon - target_value) / divisor
         else:
-            decrement = (target_value / self.initial_epsilon)**(1/divisor)
+            decrement = (target_value / self.initial_epsilon) ** (1 / divisor)
         if self.freeze_automaton_after and not self.re_init_epsilon:
             if current_episode < self.freeze_automaton_after:
                 if self.linear_epsilon:
@@ -191,10 +191,11 @@ class PartiallyObservableRlAgent:
                 self.epsilon *= decrement
 
 
-def train(env_data, agent, num_training_episodes, verbose=True):
+def train(env_data, agent, num_training_episodes, verbose=True, statistics_interval=1000):
     """
     Trains a partially-observable q-agent.
     """
+    statistics = [f'POQL, {num_training_episodes}']
     if verbose:
         print('Training started')
 
@@ -268,6 +269,10 @@ def train(env_data, agent, num_training_episodes, verbose=True):
         agent.automata_learning_samples.append(sample)
         rl_samples.append(rl_sample)
 
+        # For statistics
+        if episode % statistics_interval == 0:
+            statistics.append(evaluate(env_data, agent, verbose=False))
+
         # Update interval (for model learning and q-table extension)
         if episode % agent.update_interval == 0:
             print(f"Eps: {agent.epsilon}")
@@ -280,12 +285,12 @@ def train(env_data, agent, num_training_episodes, verbose=True):
 
                 if agent.curiosity_reward < 0:
                     agent.curiosity_reward = 0
-            print(f"Goal reached in {(goal_reached_frequency/agent.update_interval) * 100} "
+            print(f"Goal reached in {(goal_reached_frequency / agent.update_interval) * 100} "
                   f"percent of the cases during training.")
             # Early stopping
-            goaL_reached = evaluate(env_data, agent, verbose=True)
+            goal_reached, _ , _ = evaluate(env_data, agent, verbose=True)
             if agent.early_stopping_threshold:
-                if goaL_reached >= agent.early_stopping_threshold:
+                if goal_reached / 100 >= agent.early_stopping_threshold:
                     print('Early stopping threshold exceeded, training stopped.')
                     break
 
@@ -295,7 +300,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             else:
                 if verbose:
                     print(f'============== Update Interval {episode} ==============')
-                    print(f"Goal reached in {round(goaL_reached * 100, 2)} % of test episodes.")
+                    print(f"Goal reached in {goal_reached} % of test episodes.")
                     print('============== Updating model ==============')
 
                 # Update the model by running ALERGIA on all samples
@@ -309,7 +314,7 @@ def train(env_data, agent, num_training_episodes, verbose=True):
             goal_reached_frequency = 0
 
     print("Training finished.\n")
-    return agent
+    return agent, statistics
 
 
 def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, verbose=True):
@@ -347,13 +352,15 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, ve
             if reward == env.goal_reward and done:
                 goals_reached += 1
 
+    avg_rew = round(calculative_reward / episodes, 2)
+    avg_step = round(total_steps / episodes, 2)
     if verbose:
         print(f"Evaluation performed on {episodes} episodes.")
         print(f"Total Number of Goal reached  : {goals_reached}")
-        print(f"Average reward per episode    : {round(calculative_reward / episodes, 2)}")
-        print(f"Average timesteps per episode : {total_steps / episodes}")
+        print(f"Average reward per episode    : {avg_rew}")
+        print(f"Average timesteps per episode : {avg_step}")
 
-    return goals_reached / episodes
+    return goals_reached, avg_rew, avg_step
 
 
 def experiment_setup(exp_name,
@@ -404,6 +411,7 @@ def experiment_setup(exp_name,
                                        min_seq_len=min_seq_len, max_seq_len=max_seq_len)
     model = run_Alergia(initial_samples, automaton_type="mdp", print_info=verbose)
 
+    env.training_episode = 0
     agent = PartiallyObservableRlAgent(model,
                                        initial_samples,
                                        env.observation_space.n,
@@ -421,15 +429,17 @@ def experiment_setup(exp_name,
         assert curiosity_reward_reduction is not None and curiosity_rew_reduction_mode is not None
         agent.set_curiosity_params(curiosity_reward, curiosity_reward_reduction, curiosity_rew_reduction_mode)
 
-    trained_agent = train(env_data,
-                          agent,
-                          num_training_episodes=num_training_episodes)
+    trained_agent, statistics = train(env_data,
+                                      agent,
+                                      num_training_episodes=num_training_episodes)
 
     evaluate(env_data, trained_agent, test_episodes)
 
     if verbose:
         print(f'Final model constructed during learning saved to {exp_name}.dot')
     save_automaton_to_file(agent.automaton_model, exp_name)
+
+    add_statistics_to_file(world, statistics, statistic_interval_size=1000)
 
 
 def experiment(exp_name):
@@ -517,4 +527,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('world2')
+    experiment('gravity')
