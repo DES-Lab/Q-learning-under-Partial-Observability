@@ -18,6 +18,7 @@ class PartiallyObservableWorld(gym.Env):
                  one_time_rewards=True,
                  step_penalty=0):
 
+        self.world_file_path = world_file_path
         # Available actions
         self.actions_dict = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
         self.action_space_to_act_map = {i:k for k,i in self.actions_dict.items()}

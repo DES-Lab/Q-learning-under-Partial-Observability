@@ -22,7 +22,9 @@ class PartiallyObservableRlAgent:
                  abstract_observation_space,
                  action_space,
                  update_interval=1000,
-                 epsilon=0.9,
+                 initial_epsilon=0.9,
+                 target_epsilon=0.1,
+                 alergia_epsilon=0.005,
                  alpha=0.1,
                  gamma=0.9,
                  early_stopping_threshold=None,
@@ -34,8 +36,10 @@ class PartiallyObservableRlAgent:
         self.automaton_model = aut_model
         self.automata_learning_samples = aal_samples
         # parameters
-        self.initial_epsilon = epsilon
-        self.epsilon = epsilon
+        self.initial_epsilon = initial_epsilon
+        self.target_epsilon = target_epsilon
+        self.epsilon = initial_epsilon
+        self.alergia_epsilon = alergia_epsilon
         self.alpha = alpha
         self.gamma = gamma
         self.freeze_automaton_after = freeze_after_ep
@@ -71,7 +75,10 @@ class PartiallyObservableRlAgent:
         With all observed samples constructs the new model with the ALERGIA algorithm.
         State space of learned model is used to extend the q-table.
         """
-        new_model = run_Alergia(self.automata_learning_samples, automaton_type="mdp", print_info=self.verbose)
+        new_model = run_Alergia(self.automata_learning_samples,
+                                automaton_type="mdp",
+                                eps=self.alergia_epsilon,
+                                print_info=self.verbose)
         new_n_model_states = len(new_model.states)
 
         self.automaton_model = new_model
@@ -156,7 +163,7 @@ class PartiallyObservableRlAgent:
         self.curiosity_rew_reduction = curiosity_rew_reduction
         self.curiosity_rew_reduction_mode = curiosity_rew_reduction_mode
 
-    def update_epsilon(self, current_episode, num_training_episodes, target_value=0.1):
+    def update_epsilon(self, current_episode, num_training_episodes, target_value):
         """
         Updates the current value of epsilon. Value of epsilon decreases as the training progresses.
         This ensured more random sampling at the beginning, and as the training progresses sampling will become more
@@ -195,7 +202,11 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
     """
     Trains a partially-observable q-agent.
     """
-    statistics = [f'POQL, {num_training_episodes}']
+    statistics = [f'POQL, {num_training_episodes},'
+                  f'InitEps:{agent.initial_epsilon}, TargetEps:{agent.target_epsilon},'
+                  f'AlergiaEps:{agent.alergia_epsilon},Curiosity:{agent.curiosity_reward},'
+                  f'Freeze:{agent.freeze_automaton_after}']
+
     if verbose:
         print('Training started')
 
@@ -259,7 +270,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
             extended_state = agent.get_extended_state(state)
 
         # update epsilon value
-        agent.update_epsilon(episode, num_training_episodes)
+        agent.update_epsilon(episode, num_training_episodes, agent.target_epsilon)
 
         # If freezing is present, remove the curiously reward
         if agent.freeze_automaton_after and episode > agent.freeze_automaton_after:
@@ -276,7 +287,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
         # Update interval (for model learning and q-table extension)
         if episode % agent.update_interval == 0:
             # Early stopping
-            goal_reached, _ , _ = evaluate(env_data, agent, verbose=True)
+            goal_reached, _, _ = evaluate(env_data, agent, verbose=True)
             if agent.early_stopping_threshold:
                 if goal_reached / 100 >= agent.early_stopping_threshold:
                     print('Early stopping threshold exceeded, training stopped.')
@@ -310,6 +321,8 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
                 agent.replay_traces(rl_samples)
 
                 if agent.freeze_automaton_after is not None and episode >= agent.freeze_automaton_after:
+                    if verbose:
+                        print('Freezing automaton.')
                     frozen = True
 
             goal_reached_frequency = 0
@@ -380,7 +393,9 @@ def experiment_setup(exp_name,
                      max_seq_len=50,
                      update_interval=1000,
                      # initial epsilon value that will decrease to 0.1 during training
-                     epsilon=0.9,
+                     initial_epsilon=0.9,
+                     target_epsilon=0.1,
+                     alergia_epsilon=0.005,
                      alpha=0.1,
                      gamma=0.9,
                      early_stopping_threshold=None,
@@ -410,7 +425,7 @@ def experiment_setup(exp_name,
         print('Initial sampling and model construction started')
     initial_samples = get_initial_data(env, input_al, initial_sample_num=initial_sample_num,
                                        min_seq_len=min_seq_len, max_seq_len=max_seq_len)
-    model = run_Alergia(initial_samples, automaton_type="mdp", print_info=verbose)
+    model = run_Alergia(initial_samples, eps=alergia_epsilon, automaton_type="mdp", print_info=verbose)
 
     env.training_episode = 0
     agent = PartiallyObservableRlAgent(model,
@@ -418,7 +433,9 @@ def experiment_setup(exp_name,
                                        env.observation_space.n,
                                        env.action_space.n,
                                        update_interval=update_interval,
-                                       epsilon=epsilon,
+                                       initial_epsilon=initial_epsilon,
+                                       target_epsilon=target_epsilon,
+                                       alergia_epsilon=alergia_epsilon,
                                        alpha=alpha,
                                        gamma=gamma,
                                        early_stopping_threshold=early_stopping_threshold,
@@ -478,7 +495,7 @@ def experiment(exp_name):
                          freeze_after_ep=40000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.9,
+                         initial_epsilon=0.9,
                          curiosity_reward=2,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
@@ -500,7 +517,7 @@ def experiment(exp_name):
                          freeze_after_ep=20000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.9,
+                         initial_epsilon=0.9,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.95,
                          curiosity_rew_reduction_mode='mult')
@@ -520,7 +537,7 @@ def experiment(exp_name):
                          freeze_after_ep=10000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.5,
+                         initial_epsilon=0.5,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -541,7 +558,7 @@ def experiment(exp_name):
                          freeze_after_ep=10000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.9,
+                         initial_epsilon=0.9,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -562,7 +579,7 @@ def experiment(exp_name):
                          freeze_after_ep=10000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.9,
+                         initial_epsilon=0.9,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -583,7 +600,7 @@ def experiment(exp_name):
                          freeze_after_ep=12000,
                          verbose=True,
                          test_episodes=100,
-                         epsilon=0.8,
+                         initial_epsilon=0.8,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -591,4 +608,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('gravity')
+    experiment('corridor')

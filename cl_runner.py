@@ -32,7 +32,7 @@ min_seq_len = variable_map.get('min_seq_len', 15)
 max_seq_len = variable_map.get('max_seq_len', 50)
 update_interval = variable_map.get('update_interval', 1000)
 # initial epsilon value that will decrease to 0.1 during training
-epsilon = variable_map.get('epsilon', 0.9)
+initial_epsilon = variable_map.get('initial_epsilon', 0.9)
 alpha = variable_map.get('alpha', 0.1)
 gamma = variable_map.get('gamma', 0.9)
 early_stopping_threshold = variable_map.get('early_stopping_threshold', None)
@@ -58,7 +58,7 @@ experiment_setup(exp_name=variable_map['exp_name'],
                  min_seq_len=min_seq_len,
                  max_seq_len=max_seq_len,
                  update_interval=update_interval,
-                 epsilon=epsilon,
+                 initial_epsilon=initial_epsilon,
                  alpha=alpha,
                  gamma=gamma,
                  early_stopping_threshold=early_stopping_threshold,
