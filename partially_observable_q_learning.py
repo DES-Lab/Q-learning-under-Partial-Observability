@@ -523,7 +523,22 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100,
                          initial_epsilon=0.9,
-                         curiosity_reward=10,
+                         curiosity_reward=None,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'misleading_office':
+        experiment_setup('misleading_office',
+                         env=env,
+                         num_training_episodes=40000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=20000,
+                         verbose=True,
+                         test_episodes=100,
+                         alergia_epsilon=0.05,
+                         initial_epsilon=0.9,
+                         curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
@@ -538,11 +553,11 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100,
                          initial_epsilon=0.8,
-                         curiosity_reward=10,
+                         curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
 
 
 if __name__ == '__main__':
-    experiment('world1')
+    experiment('misleading_office')

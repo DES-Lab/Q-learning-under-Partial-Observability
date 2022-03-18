@@ -24,7 +24,8 @@ def get_world(world_id):
         env = gym.make(id='poge-v1',
                        world_file_path='worlds/corridor.txt',
                        is_partially_obs=True,
-                       one_time_rewards=True,
+                       one_time_rewards=False,
+                       indicate_wall=True,
                        max_ep_len=100,
                        goal_reward=100,
                        step_penalty=0.2)
@@ -32,10 +33,20 @@ def get_world(world_id):
         env = gym.make(id='poge-v1',
                        world_file_path='worlds/office_world1.txt',
                        is_partially_obs=True,
-                       one_time_rewards=True,
+                       one_time_rewards=False,
+                       indicate_wall=True,
                        max_ep_len=100,
                        goal_reward=100,
                        step_penalty=0.2)
+    if world_id == 'misleading_office':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/misleading_office_world.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=False,
+                       indicate_wall=True,
+                       max_ep_len=250,
+                       goal_reward=100,
+                       step_penalty=1)
     if world_id == 'world1':
         env = gym.make(id='poge-v1',
                        world_file_path='worlds/world1.txt',
