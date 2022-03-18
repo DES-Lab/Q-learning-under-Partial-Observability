@@ -544,7 +544,7 @@ def experiment(exp_name):
                          alergia_epsilon=0.05,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
-                         curiosity_reward=None,
+                         curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )

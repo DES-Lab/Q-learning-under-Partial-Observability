@@ -47,7 +47,7 @@ def get_world(world_id):
                        one_time_rewards=False,
                        indicate_wall=True,
                        max_ep_len=250,
-                       goal_reward=100,
+                       goal_reward=1000,
                        step_penalty=5)
     if world_id == 'world1':
         env = gym.make(id='poge-v1',
