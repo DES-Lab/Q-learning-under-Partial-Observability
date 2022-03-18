@@ -463,8 +463,9 @@ def experiment(exp_name):
                          freeze_after_ep=40000,
                          verbose=True,
                          test_episodes=100,
+                         re_init_epsilon=True,
                          initial_epsilon=0.9,
-                         curiosity_reward=2,
+                         curiosity_reward=None,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
     if exp_name == 'world2':
@@ -480,6 +481,7 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100,
                          initial_epsilon=0.9,
+                         re_init_epsilon=True,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.95,
                          curiosity_rew_reduction_mode='mult')
@@ -493,8 +495,9 @@ def experiment(exp_name):
                          freeze_after_ep=10000,
                          verbose=True,
                          test_episodes=100,
-                         initial_epsilon=0.5,
-                         curiosity_reward=10,
+                         re_init_epsilon=True,
+                         initial_epsilon=0.9,
+                         curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
@@ -509,7 +512,8 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100,
                          initial_epsilon=0.9,
-                         curiosity_reward=10,
+                         re_init_epsilon=True,
+                         curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
@@ -523,6 +527,7 @@ def experiment(exp_name):
                          verbose=True,
                          test_episodes=100,
                          initial_epsilon=0.9,
+                         re_init_epsilon=True,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -538,6 +543,7 @@ def experiment(exp_name):
                          test_episodes=100,
                          alergia_epsilon=0.05,
                          initial_epsilon=0.9,
+                         re_init_epsilon=True,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -552,7 +558,8 @@ def experiment(exp_name):
                          freeze_after_ep=12000,
                          verbose=True,
                          test_episodes=100,
-                         initial_epsilon=0.8,
+                         initial_epsilon=0.9,
+                         re_init_epsilon=True,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
