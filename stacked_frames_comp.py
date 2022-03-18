@@ -115,6 +115,6 @@ def stacked_experiment(poge_env: StackedPoge, learning_alg, training_steps, inte
     return evaluate_dqn(model, env)
 
 
-poge = get_world('gravity')
+poge = get_world('big_office')
 
-stacked_experiment(poge, A2C, training_steps=10000 * 100, num_frames=5, verbose=True)
+stacked_experiment(poge, ACKTR, training_steps=10000 * 200, num_frames=10, verbose=True)

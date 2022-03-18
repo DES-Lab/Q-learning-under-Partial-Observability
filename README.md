@@ -6,7 +6,7 @@ python 3.6
 ```
 Stable baselines implements algorithms with recurrent policies against which we compare our method.
 ```
-pip install stable-baselines[mpi]
+pip install stable-baselines
 ```
 Tensorflow
 ```
@@ -16,5 +16,5 @@ pip install tensorflow-gpu==1.15
 ```
 Gym version needs to be brought down to 0.15.7
 ```
-pip install gym=0.15.7
+pip install gym==0.15.7
 ```
