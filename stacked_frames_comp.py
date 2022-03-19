@@ -110,7 +110,7 @@ def stacked_experiment(poge_env: StackedPoge, learning_alg, training_steps, inte
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
-    add_statistics_to_file(poge.world_file_path, statistics, interval_size)
+    add_statistics_to_file(poge.world_file_path, statistics, interval_size, subfolder='stacked')
 
     return evaluate_dqn(model, env)
 

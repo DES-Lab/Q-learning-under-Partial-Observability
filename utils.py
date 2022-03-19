@@ -1,9 +1,11 @@
 import random
+from statistics import mean
 import gym
-import gym_partially_observable_grid
 
 from aalpy.base import SUL
 from gym.spaces import Discrete
+
+from tried_ideas.prism_schedulers import PrismInterface
 
 
 class CookieDomain:
@@ -190,6 +192,40 @@ def process_output(env, output, reward=0):
     return output
 
 
+def test_model(model, env, input_al, num_episodes, max_ep_len=100):
+    num_steps_per_ep = []
+    goal_reached = 0
+
+    prism_interface = PrismInterface("GOAL", model)
+    print(f'Goal Reachability: {prism_interface.property_val}')
+
+    for _ in range(num_episodes):
+        step_counter = 0
+        scheduler_step_valid = True
+        env.reset()
+        prism_interface.reset()
+        while True:
+            if step_counter == max_ep_len:
+                break
+            i = prism_interface.get_input()
+            if not scheduler_step_valid or i is None:
+                i = random.choice(input_al)
+            encoded_i = env.actions_dict[i]
+            o, r, _, _ = env.step(encoded_i)
+            o = process_output(env, o, r)
+            step_counter += 1
+            scheduler_step_valid = prism_interface.step_to(i, o)
+            if r == env.goal_reward:
+                goal_reached += 1
+                break
+
+        num_steps_per_ep.append(step_counter)
+
+    print(f'Tested on {num_episodes} episodes:')
+    print(f'Goal reached  : {goal_reached}')
+    print(f'Avg. step count : {mean(num_steps_per_ep)}')
+
+
 def visualize_episode(env, coordinate_list, step_time=0.7):
     from time import sleep
     from copy import deepcopy
@@ -204,7 +240,7 @@ def visualize_episode(env, coordinate_list, step_time=0.7):
         sleep(step_time)
 
 
-def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50):
+def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50, incl_rewards=False):
     # Generate random initial samples
     random_samples = []
     for _ in range(initial_sample_num):
@@ -214,8 +250,10 @@ def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max
             i = random.choice(input_al)
             encoded_i = env.actions_dict[i]
             o, r, _, _ = env.step(encoded_i)
-            # o = process_output(env, o, r)
-            o = env.decode(o)
+            if incl_rewards:
+                o = process_output(env, o, r)
+            else:
+                o = env.decode(o)
             sample.append((i, o))
         random_samples.append(sample)
     return random_samples
@@ -255,8 +293,9 @@ def get_samples_reaching_goal(env, num_samples=10):
     return path_locations
 
 
-def add_statistics_to_file(path_to_world, statistics, statistic_interval_size):
+def add_statistics_to_file(path_to_world, statistics, statistic_interval_size, subfolder=''):
     import csv
+    subfolder = subfolder + '/' if subfolder[-1] != '/' else subfolder
 
     world_name = path_to_world.split('/')[-1].split('.')[0] + '.csv'
 
@@ -272,7 +311,7 @@ def add_statistics_to_file(path_to_world, statistics, statistic_interval_size):
         avg_step.append(s[2])
         current_interval += statistic_interval_size
 
-    with open(f'statistics/{world_name}', 'a', newline='') as f:
+    with open(f'statistics/{subfolder}{world_name}', 'a', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
         writer.writerow([experiment_setup])

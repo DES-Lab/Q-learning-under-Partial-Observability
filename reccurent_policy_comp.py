@@ -83,7 +83,7 @@ def lstm_experiment(poge, learning_alg, training_steps, interval_size=1000, verb
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
-    add_statistics_to_file(env.envs[0].world_file_path, statistics, interval_size)
+    add_statistics_to_file(env.envs[0].world_file_path, statistics, interval_size, subfolder='reccurent')
 
     return evaluate_ltsm(model, env)
 
