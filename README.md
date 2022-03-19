@@ -1,6 +1,6 @@
-## Installation Process for Comparison
-Due to the older version of tensorflow reacquired by stable baselines v.2, 
-ensure that you have Python 3.6 installed.
+## Installation Process
+Due to the older version of tensorflow reacquired by stable baselines v.2, ensure that you have Python 3.6 installed.
+Note that our algorithm works with Python 3.6 and newer versions, but for the sake of comparison use Python3.6.
 
 With python 3.6 create the [virtual enviroment](https://python.land/virtual-environments/virtualent):
 ```
@@ -11,6 +11,7 @@ myenv\Scripts\activate.bat // Windows
 
 Install reacquired dependencies for comparison.
 ```
+pip install aalpy
 pip install stable-baselines
 pip install tensorflow=1.15 (or tensorflow-gpu==1.15)
 pip install numpy==1.16.4
