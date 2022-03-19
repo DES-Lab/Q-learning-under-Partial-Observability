@@ -22,7 +22,7 @@ def get_world(world_id):
                        max_ep_len=100,
                        goal_reward=10,
                        step_penalty=0.2)
-    if world_id == 'corridor':
+    if world_id == 'corridor_permanent_rew':
         env = gym.make(id='poge-v1',
                        world_file_path='worlds/corridor.txt',
                        is_partially_obs=True,
@@ -31,24 +31,51 @@ def get_world(world_id):
                        max_ep_len=100,
                        goal_reward=100,
                        step_penalty=0.2)
-    if world_id == 'big_office':
+    if world_id == 'corridor_one_time_rew':
         env = gym.make(id='poge-v1',
-                       world_file_path='worlds/office_world1.txt',
+                       world_file_path='worlds/corridor.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=True,
+                       max_ep_len=100,
+                       goal_reward=100,
+                       step_penalty=0.2)
+    if world_id == 'corridor-rew':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/corridor-rew.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
                        max_ep_len=100,
                        goal_reward=100,
                        step_penalty=0.2)
-    if world_id == 'misleading_office':
+    if world_id == 'big_office_one_time_rew':
         env = gym.make(id='poge-v1',
-                       world_file_path='worlds/misleading_office_world.txt',
+                       world_file_path='worlds/office_world1.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=True,
+                       max_ep_len=100,
+                       goal_reward=100,
+                       step_penalty=0.2)
+    if world_id == 'big_office_permanent_rew':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/office_world1.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
-                       max_ep_len=250,
-                       goal_reward=1000,
-                       step_penalty=5)
+                       max_ep_len=150,
+                       goal_reward=100,
+                       step_penalty=0.2)
+    if world_id == 'misleading_office_one_time':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/misleading_office_world.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=True,
+                       max_ep_len=150,
+                       goal_reward=100,
+                       step_penalty=0.2)
     if world_id == 'world1':
         env = gym.make(id='poge-v1',
                        world_file_path='worlds/world1.txt',

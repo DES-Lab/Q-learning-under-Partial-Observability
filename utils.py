@@ -294,8 +294,13 @@ def get_samples_reaching_goal(env, num_samples=10):
 
 
 def add_statistics_to_file(experiment_name, statistics, statistic_interval_size, subfolder=''):
+    import os
     import csv
+
     subfolder = subfolder + '/' if subfolder[-1] != '/' else subfolder
+
+    if not os.path.exists(f'statistics/{subfolder}'):
+        os.makedirs(f'statistics/{subfolder}')
 
     experiment_setup = statistics.pop(0)
 

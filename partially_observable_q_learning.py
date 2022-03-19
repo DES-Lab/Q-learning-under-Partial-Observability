@@ -200,7 +200,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
     """
     Trains a partially-observable q-agent.
     """
-    statistics = [f'POQL, {num_training_episodes},'
+    statistics = [f'POQL, {num_training_episodes}, Update Interval:{agent.update_interval}'
                   f'InitEps:{agent.initial_epsilon}, TargetEps:{agent.target_epsilon},'
                   f'AlergiaEps:{agent.alergia_epsilon},Curiosity:{agent.curiosity_reward},'
                   f'Freeze:{agent.freeze_automaton_after}']
@@ -301,7 +301,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
 
                 if agent.curiosity_reward < 0:
                     agent.curiosity_reward = 0
-            print(f"Goal reached in {(goal_reached_frequency / agent.update_interval) * 100} "
+            print(f"Goal reached in {round((goal_reached_frequency / agent.update_interval) * 100,2)} "
                   f"percent of the cases during training.")
 
             # if freezing is enabled do not update the model
@@ -441,6 +441,9 @@ def experiment_setup(exp_name,
 
 def experiment(exp_name):
     env = get_world(exp_name)
+    if env is None:
+        print(f'Environment {exp_name} not found.')
+        return
     if exp_name == 'world1':
         experiment_setup('world1',
                          env=env,
@@ -517,13 +520,45 @@ def experiment(exp_name):
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
-    if exp_name == 'big_office':
-        experiment_setup('big_office',
+    if exp_name == 'big_office_one_time_rew' or exp_name == 'big_office_permanent_rew':
+        experiment_setup(exp_name,
                          env=env,
+                         num_training_episodes=30000,
+                         update_interval=2000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=16000,
+                         verbose=True,
+                         test_episodes=100,
+                         initial_epsilon=0.9,
+                         re_init_epsilon=True,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'misleading_office_one_time':
+        experiment_setup('misleading_office_one_time',
+                         env=env,
+                         num_training_episodes=40000,
+                         update_interval=2000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=20000,
+                         verbose=True,
+                         test_episodes=100,
+                         alergia_epsilon=0.1,
+                         initial_epsilon=0.9,
+                         re_init_epsilon=True,
+                         curiosity_reward=10,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'corridor-rew':
+        experiment_setup('corridor-rew',
+                         env=env,
+                         initial_sample_num=10000,
                          num_training_episodes=30000,
                          update_interval=1000,
                          early_stopping_threshold=0.98,
-                         freeze_after_ep=10000,
+                         freeze_after_ep=12000,
                          verbose=True,
                          test_episodes=100,
                          initial_epsilon=0.9,
@@ -532,24 +567,8 @@ def experiment(exp_name):
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
-    if exp_name == 'misleading_office':
-        experiment_setup('misleading_office',
-                         env=env,
-                         num_training_episodes=40000,
-                         update_interval=1000,
-                         early_stopping_threshold=0.98,
-                         freeze_after_ep=20000,
-                         verbose=True,
-                         test_episodes=100,
-                         alergia_epsilon=0.05,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=True,
-                         curiosity_reward=5,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'corridor':
-        experiment_setup('corridor',
+    if exp_name == 'corridor_one_time_rew':
+        experiment_setup('corridor_one_time_rew',
                          env=env,
                          initial_sample_num=10000,
                          num_training_episodes=30000,
@@ -567,4 +586,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('corridor')
+    experiment('misleading_office_one_time')
