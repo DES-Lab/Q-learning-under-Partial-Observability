@@ -88,6 +88,6 @@ def lstm_experiment(poge, learning_alg, training_steps, interval_size=1000, verb
     return evaluate_ltsm(model, env)
 
 
-env = get_world('gravity')
+env = get_world('world1+rew')
 
-lstm_experiment(env, ACER, 10000)
+lstm_experiment(env, ACER, 10000*100)
