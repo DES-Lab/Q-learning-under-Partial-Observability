@@ -1,6 +1,3 @@
-
-
-
 "POQL, 10000,InitEps:0.9, TargetEps:0.1,AlergiaEps:0.005,Curiosity:None,Freeze:None"
 1000,2000,3000,4000,5000,6000,7000,8000,9000,10000
 0,0,0,0,0,77,0,0,100,100

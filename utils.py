@@ -293,8 +293,9 @@ def get_samples_reaching_goal(env, num_samples=10):
     return path_locations
 
 
-def add_statistics_to_file(path_to_world, statistics, statistic_interval_size):
+def add_statistics_to_file(path_to_world, statistics, statistic_interval_size, subfolder=''):
     import csv
+    subfolder = subfolder + '/' if subfolder[-1] != '/' else subfolder
 
     world_name = path_to_world.split('/')[-1].split('.')[0] + '.csv'
 
@@ -310,7 +311,7 @@ def add_statistics_to_file(path_to_world, statistics, statistic_interval_size):
         avg_step.append(s[2])
         current_interval += statistic_interval_size
 
-    with open(f'statistics/{world_name}', 'a', newline='') as f:
+    with open(f'statistics/{subfolder}{world_name}', 'a', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
         writer.writerow([experiment_setup])
