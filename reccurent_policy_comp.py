@@ -67,7 +67,7 @@ class TrainingMonitorCallback(BaseCallback):
             self.data.append(data)
 
 
-def lstm_experiment(poge, learning_alg, training_steps, interval_size=1000, verbose=False):
+def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interval_size=1000, verbose=False):
     assert learning_alg in {A2C, ACER, PPO2, ACKTR}
 
     poge.training_episode = 0
@@ -83,11 +83,12 @@ def lstm_experiment(poge, learning_alg, training_steps, interval_size=1000, verb
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
-    add_statistics_to_file(env.envs[0].world_file_path, statistics, interval_size, subfolder='reccurent')
+    add_statistics_to_file(experiment_name, statistics, interval_size, subfolder='reccurent')
 
     return evaluate_ltsm(model, env)
 
 
-env = get_world('world1+rew')
+exp = 'world1+rew'
+env = get_world(exp)
 
-lstm_experiment(env, ACER, 10000*100)
+lstm_experiment(exp, env, ACER, 10000 * 100)

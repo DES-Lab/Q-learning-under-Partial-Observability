@@ -93,7 +93,7 @@ def evaluate_dqn(model, env, num_episodes=100, verbose=True):
     return goal_reached, avg_rew, avg_step
 
 
-def stacked_experiment(poge_env: StackedPoge, learning_alg, training_steps, interval_size=1000,
+def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, training_steps, interval_size=1000,
                        num_frames=5, verbose=False):
     assert learning_alg in {DQN, A2C, ACKTR}
 
@@ -110,11 +110,12 @@ def stacked_experiment(poge_env: StackedPoge, learning_alg, training_steps, inte
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
-    add_statistics_to_file(poge.world_file_path, statistics, interval_size, subfolder='stacked')
+    add_statistics_to_file(experiment_name, statistics, interval_size, subfolder='stacked')
 
     return evaluate_dqn(model, env)
 
 
-poge = get_world('big_office')
+exp = 'big_office'
+poge = get_world(exp)
 
-stacked_experiment(poge, ACKTR, training_steps=10000 * 200, num_frames=10, verbose=True)
+stacked_experiment(exp, poge, ACKTR, training_steps=10000 * 200, num_frames=10, verbose=True)
