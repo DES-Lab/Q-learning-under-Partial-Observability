@@ -77,7 +77,10 @@ def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interva
     statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size, verbose=verbose)
 
     model = ACER('MlpLstmPolicy', env, n_cpu_tf_sess=None)
+
+    print(f'Training started for {experiment_name}. Algorithm: {learning_alg_name[learning_alg]}, Num. Steps: {training_steps}')
     model.learn(total_timesteps=training_steps, callback=statistic_collector)
+    print(f'Training finished.')
 
     exp_setup_str = f'{learning_alg_name[learning_alg]},{training_steps}'
     statistics = statistic_collector.data
@@ -89,6 +92,7 @@ def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interva
 
 
 exp = 'world1+rew'
+num_training_episodes = 10000
 env = get_world(exp)
 
-lstm_experiment(exp, env, ACER, 10000 * 100)
+lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len)

@@ -104,7 +104,9 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
     statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size, verbose=verbose)
 
     model = learning_alg('MlpPolicy', env, verbose=False)
+    print(f'Training started for {experiment_name}. Algorithm: {learning_alg_name[learning_alg]}, Num. Steps: {training_steps}')
     model.learn(total_timesteps=training_steps, callback=statistic_collector)
+    print(f'Training finished.')
 
     exp_setup_str = f'{learning_alg_name[learning_alg]},{training_steps}, {num_frames}'
     statistics = statistic_collector.data
@@ -116,6 +118,7 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
 
 
 exp = 'big_office'
+num_training_episodes = 10000
 poge = get_world(exp)
 
-stacked_experiment(exp, poge, ACKTR, training_steps=10000 * 200, num_frames=10, verbose=True)
+stacked_experiment(exp, poge, ACKTR, training_steps=num_training_episodes * poge.max_ep_len, num_frames=10, verbose=True)
