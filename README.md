@@ -13,7 +13,7 @@ Install reacquired dependencies for comparison.
 ```
 pip install aalpy
 pip install stable-baselines
-pip install tensorflow=1.15 (or tensorflow-gpu==1.15)
+pip install tensorflow==1.15 (or tensorflow-gpu==1.15)
 pip install numpy==1.16.4
 pip install gym==0.15.7
 ```

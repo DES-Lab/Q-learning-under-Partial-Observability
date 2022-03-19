@@ -118,7 +118,7 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
     model.learn(total_timesteps=training_steps, callback=statistic_collector)
     print(f'Training finished.')
 
-    exp_setup_str = f'{learning_alg_name[learning_alg]},{training_steps}, {num_frames}'
+    exp_setup_str = f'{learning_alg_name[learning_alg]},Training Steps:{training_steps}, NumFrames:{num_frames}'
     statistics = statistic_collector.data
     statistics.insert(0, exp_setup_str)
 
@@ -127,8 +127,11 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
     return evaluate_dqn(model, env)
 
 
-exp = 'big_office'
-num_training_episodes = 10000
+exp = 'thin_maze'
+num_training_episodes = 12000
+frame_size = 5
 poge = get_world(exp)
 
-stacked_experiment(exp, poge, ACKTR, training_steps=num_training_episodes * poge.max_ep_len, num_frames=10, verbose=True)
+# https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
+
+stacked_experiment(exp, poge, A2C, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size, verbose=True)

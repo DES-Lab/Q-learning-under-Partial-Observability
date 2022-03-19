@@ -19,7 +19,7 @@ class CookieDomain:
                             one_time_rewards=False)
 
         self.possible_cookies_locations = list(self.env.goal_locations.copy())
-        self.env.env.goal_locations = set()
+        self.env.goal_locations = set()
 
         self.goal_reward = self.env.goal_reward
 
@@ -42,7 +42,7 @@ class CookieDomain:
     def reset(self):
         self.env.reset()
         x, y = self.env.player_location
-        self.env.env.goal_locations = set()
+        self.env.goal_locations = set()
         return self.env.encode((x, y, self.env.get_observation(), self.is_cookie_in_the_room()))
 
     def step(self, action):
@@ -54,10 +54,10 @@ class CookieDomain:
         env_state = self.env.encode((player_x, player_y, abstract_obs, self.is_cookie_in_the_room()))
 
         if abstract_obs == 'button':
-            self.env.env.goal_locations = {random.choice(self.possible_cookies_locations)}
+            self.env.goal_locations = {random.choice(self.possible_cookies_locations)}
 
         # enforce correct behaviour
-        if rewards == self.env.goal_reward and self.env.player_location not in self.env.env.goal_locations:
+        if rewards == self.env.goal_reward and self.env.player_location not in self.env.goal_locations:
             rewards = 0
 
         return env_state, rewards, done, _
@@ -92,14 +92,14 @@ class CookieDomain:
 
     def _get_obs_space(self):
         counter = 0
-        self.env.env.state_2_one_hot_map = {}
+        self.env.state_2_one_hot_map = {}
         # hack to make reset work and abstract steps work
         x, y = self.env.player_location
         reset_tile = self.env.abstract_symbol_name_map[self.env.abstract_world[x][y]]
-        self.env.env.state_2_one_hot_map[reset_tile] = 0
+        self.env.state_2_one_hot_map[reset_tile] = 0
         counter += 1
         for ab_tile in list(set(self.env.abstract_symbol_name_map.values())):
-            self.env.env.state_2_one_hot_map[ab_tile] = counter
+            self.env.state_2_one_hot_map[ab_tile] = counter
             counter += 1
 
         world_to_process = self.env.world
@@ -109,11 +109,11 @@ class CookieDomain:
                     if tile == ' ' or tile == 'G':
                         abstract_tile = self.env.abstract_symbol_name_map[self.env.abstract_world[x][y]]
                         # x, y, abstract output, is_cookie_in_the_room
-                        self.env.env.state_2_one_hot_map[(x, y, abstract_tile, False)] = counter
-                        self.env.env.state_2_one_hot_map[(x, y, abstract_tile, True)] = counter + 1
+                        self.env.state_2_one_hot_map[(x, y, abstract_tile, False)] = counter
+                        self.env.state_2_one_hot_map[(x, y, abstract_tile, True)] = counter + 1
                         counter += 2
 
-        self.env.env.one_hot_2_state_map = {v: k for k, v in self.env.env.state_2_one_hot_map.items()}
+        self.env.one_hot_2_state_map = {v: k for k, v in self.env.state_2_one_hot_map.items()}
 
         return counter
 

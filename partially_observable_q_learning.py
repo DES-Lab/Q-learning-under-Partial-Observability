@@ -583,7 +583,39 @@ def experiment(exp_name):
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
+    if exp_name == 'corner':
+        experiment_setup('corner',
+                         env=env,
+                         initial_sample_num=10000,
+                         num_training_episodes=30000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=12000,
+                         verbose=True,
+                         test_episodes=100,
+                         initial_epsilon=0.9,
+                         re_init_epsilon=False,
+                         curiosity_reward=5,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'thin_maze':
+        experiment_setup('thin_maze',
+                         env=env,
+                         initial_sample_num=10000,
+                         num_training_episodes=30000,
+                         update_interval=1000,
+                         early_stopping_threshold=0.98,
+                         freeze_after_ep=12000,
+                         verbose=True,
+                         test_episodes=100,
+                         initial_epsilon=0.9,
+                         re_init_epsilon=False,
+                         curiosity_reward=5,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
 
 
 if __name__ == '__main__':
-    experiment('misleading_office_one_time')
+    experiment('thin_maze')

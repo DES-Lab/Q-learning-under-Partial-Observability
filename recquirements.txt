@@ -1,5 +1,5 @@
 aalpy
-gym
-numpy
-matplotlib
-tikzplotlib
+numpy==1.16.4
+gym==0.15.7
+tensorflow==1.15
+stable-baselines
