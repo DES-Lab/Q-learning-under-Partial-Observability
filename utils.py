@@ -272,7 +272,7 @@ def add_statistics_to_file(experiment_name, statistics, statistic_interval_size,
         avg_step.append(s[2])
         current_interval += statistic_interval_size
 
-    with open(f'statistics/{subfolder}{experiment_name}', 'a', newline='') as f:
+    with open(f'statistics/{subfolder}{experiment_name}.csv', 'a', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
         writer.writerow([experiment_setup])
