@@ -436,7 +436,7 @@ def experiment_setup(exp_name,
         print(f'Final model constructed during learning saved to {exp_name}.dot')
     save_automaton_to_file(agent.automaton_model, f'learned_models/{exp_name}')
 
-    add_statistics_to_file(env.world_file_path, statistics, statistic_interval_size=1000, subfolder='poql')
+    add_statistics_to_file(exp_name, statistics, statistic_interval_size=1000, subfolder='poql')
 
 
 def experiment(exp_name):
