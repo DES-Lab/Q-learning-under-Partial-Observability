@@ -439,7 +439,7 @@ def experiment_setup(exp_name,
     add_statistics_to_file(exp_name, statistics, statistic_interval_size=1000, subfolder='poql')
 
 
-def poql_experiment(exp_name, verbose=True):
+def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
     env = get_world(exp_name)
     if env is None:
         print(f'Environment {exp_name} not found.')
@@ -450,7 +450,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=4000,
                          num_training_episodes=10000,
                          update_interval=1000,
-                         early_stopping_threshold=None,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=None,
                          verbose=verbose,
                          test_episodes=100)
@@ -462,7 +462,7 @@ def poql_experiment(exp_name, verbose=True):
                          min_seq_len=30,
                          max_seq_len=100,
                          update_interval=1000,
-                         early_stopping_threshold=None,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=40000,
                          verbose=verbose,
                          test_episodes=100,
@@ -479,7 +479,7 @@ def poql_experiment(exp_name, verbose=True):
                          min_seq_len=30,
                          max_seq_len=100,
                          update_interval=2000,
-                         early_stopping_threshold=None,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=20000,
                          verbose=verbose,
                          test_episodes=100,
@@ -494,7 +494,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=10000,
                          num_training_episodes=20000,
                          update_interval=1000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=10000,
                          verbose=verbose,
                          test_episodes=100,
@@ -510,7 +510,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=10000,
                          num_training_episodes=20000,
                          update_interval=1000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=10000,
                          verbose=verbose,
                          test_episodes=100,
@@ -525,7 +525,7 @@ def poql_experiment(exp_name, verbose=True):
                          env=env,
                          num_training_episodes=30000,
                          update_interval=2000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=16000,
                          verbose=verbose,
                          test_episodes=100,
@@ -540,7 +540,7 @@ def poql_experiment(exp_name, verbose=True):
                          env=env,
                          num_training_episodes=40000,
                          update_interval=2000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=20000,
                          verbose=verbose,
                          test_episodes=100,
@@ -557,7 +557,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=10000,
                          num_training_episodes=30000,
                          update_interval=1000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=12000,
                          verbose=verbose,
                          test_episodes=100,
@@ -573,7 +573,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=10000,
                          num_training_episodes=30000,
                          update_interval=1000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=12000,
                          verbose=verbose,
                          test_episodes=100,
@@ -589,7 +589,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=10000,
                          num_training_episodes=30000,
                          update_interval=1000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=12000,
                          verbose=verbose,
                          test_episodes=100,
@@ -605,7 +605,7 @@ def poql_experiment(exp_name, verbose=True):
                          initial_sample_num=10000,
                          num_training_episodes=30000,
                          update_interval=1000,
-                         early_stopping_threshold=0.98,
+                         early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=12000,
                          verbose=verbose,
                          test_episodes=100,
@@ -618,4 +618,4 @@ def poql_experiment(exp_name, verbose=True):
 
 
 if __name__ == '__main__':
-    poql_experiment('thin_maze')
+    poql_experiment('thin_maze', early_stopping_acc=1.01)

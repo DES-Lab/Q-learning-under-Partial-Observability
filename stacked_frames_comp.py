@@ -59,12 +59,13 @@ class StackedPoge(gym.Env):
 
 
 class TrainingMonitorCallback(BaseCallback):
-    def __init__(self, env, check_freq: int = 1000, verbose=0):
+    def __init__(self, env, check_freq: int = 1000, early_stopping_percentage=0.98, verbose=0):
         super().__init__(verbose)
         self.env = env
         self.check_freq = check_freq
         self.data = []
         self.verbose = True if verbose == 1 else 0
+        self.early_stopping_percentage = early_stopping_percentage
 
     def _on_step(self):
         if self.env.poge_env.training_episode % self.check_freq == 0:
@@ -74,6 +75,12 @@ class TrainingMonitorCallback(BaseCallback):
             data = evaluate_dqn(self.model, self.env, num_episodes=100, verbose=self.verbose)
             # self.env.poge_env.training_episode -= 100  # subtract eval episodes
             self.data.append(data)
+
+            goal_reached = data[0]
+            if goal_reached / 100 >= self.early_stopping_percentage:
+                if self.verbose:
+                    print(f'Early stopping triggered. Goal reached in {goal_reached}% of test episodes.')
+                return False
 
 
 def evaluate_dqn(model, env, num_episodes=100, verbose=True):
@@ -106,14 +113,16 @@ def evaluate_dqn(model, env, num_episodes=100, verbose=True):
 
 
 def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, training_steps, interval_size=1000,
-                       num_frames=5, verbose=False):
+                       num_frames=5, early_stopping_acc=1.01, verbose=False):
     assert learning_alg in {DQN, A2C, ACKTR}
 
     poge_env.training_episode = 0
 
     env = StackedPoge(poge_env, num_frames)
 
-    statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size, verbose=verbose)
+    statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size,
+                                                  early_stopping_percentage=early_stopping_acc,
+                                                  verbose=verbose)
 
     model = learning_alg('MlpPolicy', env, verbose=False)
     print(
@@ -131,12 +140,12 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
 
 
 if __name__ == '__main__':
-    exp = 'thin_maze'
+    exp = 'world1+rew'
     num_training_episodes = 12000
-    frame_size = 5
+    frame_size = 10
     poge = get_world(exp)
 
     # https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
 
-    stacked_experiment(exp, poge, A2C, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
+    stacked_experiment(exp, poge, ACKTR, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
                        verbose=True)

@@ -5,7 +5,7 @@ import gym_partially_observable_grid
 def get_all_world_ids():
     return ['gravity', 'gravity2', 'corridor_permanent_rew', 'corridor_one_time_rew', 'corridor-rew',
             'big_office_one_time_rew', 'big_office_permanent_rew', 'misleading_office_one_time',
-            'world1', 'world2', 'world2+rew', 'corner', 'thin_maze']
+            'world1', 'world1+rew', 'world2', 'world2+rew', 'corner', 'thin_maze']
 
 
 def get_world(world_id):
@@ -52,7 +52,7 @@ def get_world(world_id):
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
-                       max_ep_len=100,
+                       max_ep_len=200,
                        goal_reward=100,
                        step_penalty=0.2)
     if world_id == 'big_office_one_time_rew':
@@ -87,6 +87,15 @@ def get_world(world_id):
                        world_file_path='worlds/world1.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
+                       indicate_wall=True,
+                       max_ep_len=100,
+                       goal_reward=10,
+                       step_penalty=0.1)
+    if world_id == 'world1+rew':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/world1.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
                        indicate_wall=True,
                        max_ep_len=100,
                        goal_reward=10,

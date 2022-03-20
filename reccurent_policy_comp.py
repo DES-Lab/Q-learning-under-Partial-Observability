@@ -55,12 +55,13 @@ def evaluate_ltsm(model, env, num_episodes=100, verbose=True):
 
 
 class TrainingMonitorCallback(BaseCallback):
-    def __init__(self, env, check_freq: int = 100, verbose: int = 0):
+    def __init__(self, env, check_freq: int = 100, early_stopping_percentage=0.98, verbose: int = 0):
         super().__init__(verbose)
         self.env = env
         self.check_freq = check_freq
         self.data = []
         self.verbose = True if verbose == 1 else 0
+        self.early_stopping_percentage = early_stopping_percentage
 
     def _on_step(self):
         if self.env.envs[0].training_episode % self.check_freq == 0:
@@ -70,15 +71,25 @@ class TrainingMonitorCallback(BaseCallback):
             # self.env.envs[0].training_episode -= check_freq # subtract eval episodes
             self.data.append(data)
 
+            goal_reached = data[0]
+            if goal_reached / 100 >= self.early_stopping_percentage:
+                if self.verbose:
+                    print(f'Early stopping triggered. Goal reached in {goal_reached}% of test episodes.')
+                return False
 
-def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interval_size=1000, verbose=False):
+
+def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interval_size=1000,
+                    early_stopping_acc=1.01, verbose=False):
     assert learning_alg in {A2C, ACER, PPO2, ACKTR}
 
     poge.training_episode = 0
 
     env = DummyVecEnv([lambda: poge])
 
-    statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size, verbose=verbose)
+    statistic_collector = TrainingMonitorCallback(env,
+                                                  check_freq=interval_size,
+                                                  early_stopping_percentage=early_stopping_acc,
+                                                  verbose=verbose)
 
     model = ACER('MlpLstmPolicy', env, n_cpu_tf_sess=None)
 
@@ -101,4 +112,5 @@ if __name__ == '__main__':
     num_training_episodes = 10000
     env = get_world(exp)
 
+    # https://github.com/hill-a/stable-baselines/issues/646 Shows that it is simply slow, at least my understanding.
     lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len)
