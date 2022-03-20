@@ -439,7 +439,7 @@ def experiment_setup(exp_name,
     add_statistics_to_file(exp_name, statistics, statistic_interval_size=1000, subfolder='poql')
 
 
-def poql_experiment(exp_name):
+def poql_experiment(exp_name, verbose=True):
     env = get_world(exp_name)
     if env is None:
         print(f'Environment {exp_name} not found.')
@@ -452,7 +452,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=None,
                          freeze_after_ep=None,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100)
     if exp_name == 'world2+rew':
         experiment_setup('world2+rew',
@@ -464,7 +464,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=None,
                          freeze_after_ep=40000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          re_init_epsilon=True,
                          initial_epsilon=0.9,
@@ -481,7 +481,7 @@ def poql_experiment(exp_name):
                          update_interval=2000,
                          early_stopping_threshold=None,
                          freeze_after_ep=20000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
@@ -496,7 +496,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=10000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          re_init_epsilon=True,
                          initial_epsilon=0.9,
@@ -512,7 +512,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=10000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
@@ -527,7 +527,7 @@ def poql_experiment(exp_name):
                          update_interval=2000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=16000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
@@ -542,7 +542,7 @@ def poql_experiment(exp_name):
                          update_interval=2000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=20000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          alergia_epsilon=0.1,
                          initial_epsilon=0.9,
@@ -559,7 +559,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=12000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
@@ -575,7 +575,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=12000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
@@ -591,7 +591,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=12000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=False,
@@ -607,7 +607,7 @@ def poql_experiment(exp_name):
                          update_interval=1000,
                          early_stopping_threshold=0.98,
                          freeze_after_ep=12000,
-                         verbose=True,
+                         verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=False,

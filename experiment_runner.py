@@ -14,7 +14,7 @@ def run_poql_experiments():
     i = 0
     for w in world_ids:
         for _ in range(repeat_each):
-            poql_experiment(w)
+            poql_experiment(w, verbose=False)
             i += 1
             print(f"Percentage of complete POQL experiments: {round(i / num_runs, 2)}%")
 
