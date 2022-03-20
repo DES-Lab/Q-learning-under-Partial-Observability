@@ -2,6 +2,12 @@ import gym
 import gym_partially_observable_grid
 
 
+def get_all_world_ids():
+    return ['gravity', 'gravity2', 'corridor_permanent_rew', 'corridor_one_time_rew', 'corridor-rew',
+            'big_office_one_time_rew', 'big_office_permanent_rew', 'misleading_office_one_time',
+            'world1', 'world2', 'world2+rew', 'corner', 'thin_maze']
+
+
 def get_world(world_id):
     env = None
     if world_id == 'gravity':

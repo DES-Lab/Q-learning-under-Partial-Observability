@@ -14,12 +14,14 @@ learning_alg_name = {DQN: 'DQN', A2C: 'A2C', ACKTR: 'ACKTR'}
 
 # surprise tensorflow future warnings
 import tensorflow as tf
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 python_version = sys.version_info
 if python_version.major != 3 and python_version.minor != 6:
     print('Ensure that you are using Python 3.6 and libraries version defined in "Comparison" section of readme.')
     assert False
+
 
 class StackedPoge(gym.Env):
     def __init__(self, poge_env, stacked_frames_num=5):
@@ -114,7 +116,8 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
     statistic_collector = TrainingMonitorCallback(env, check_freq=interval_size, verbose=verbose)
 
     model = learning_alg('MlpPolicy', env, verbose=False)
-    print(f'Training started for {experiment_name}. Algorithm: {learning_alg_name[learning_alg]}, Num. Steps: {training_steps}')
+    print(
+        f'Training started for {experiment_name}. Algorithm: {learning_alg_name[learning_alg]}, Num. Steps: {training_steps}')
     model.learn(total_timesteps=training_steps, callback=statistic_collector)
     print(f'Training finished.')
 
@@ -127,11 +130,13 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
     return evaluate_dqn(model, env)
 
 
-exp = 'thin_maze'
-num_training_episodes = 12000
-frame_size = 5
-poge = get_world(exp)
+if __name__ == '__main__':
+    exp = 'thin_maze'
+    num_training_episodes = 12000
+    frame_size = 5
+    poge = get_world(exp)
 
-# https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
+    # https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
 
-stacked_experiment(exp, poge, A2C, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size, verbose=True)
+    stacked_experiment(exp, poge, A2C, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
+                       verbose=True)

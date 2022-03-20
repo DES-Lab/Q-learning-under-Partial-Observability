@@ -11,6 +11,7 @@ learning_alg_name = {A2C: 'A2C', ACER: 'ACER', PPO2: 'PPO2', ACKTR: 'ACTOR'}
 
 # surprise tensorflow future warnings
 import tensorflow as tf
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 python_version = sys.version_info
@@ -95,8 +96,9 @@ def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interva
     return evaluate_ltsm(model, env)
 
 
-exp = 'world1'
-num_training_episodes = 10000
-env = get_world(exp)
+if __name__ == '__main__':
+    exp = 'world1'
+    num_training_episodes = 10000
+    env = get_world(exp)
 
-lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len)
+    lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len)

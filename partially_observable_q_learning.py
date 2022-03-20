@@ -439,7 +439,7 @@ def experiment_setup(exp_name,
     add_statistics_to_file(exp_name, statistics, statistic_interval_size=1000, subfolder='poql')
 
 
-def experiment(exp_name):
+def poql_experiment(exp_name):
     env = get_world(exp_name)
     if env is None:
         print(f'Environment {exp_name} not found.')
@@ -618,4 +618,4 @@ def experiment(exp_name):
 
 
 if __name__ == '__main__':
-    experiment('thin_maze')
+    poql_experiment('thin_maze')
