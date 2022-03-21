@@ -206,7 +206,8 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
     """
     Trains a partially-observable q-agent.
     """
-    statistics = [f'POQL, {num_training_episodes}, Update Interval:{agent.update_interval}'
+    statistics = [f'POQL, {num_training_episodes}, ModelType:{agent.alergia_model_type},'
+                  f'Update Interval:{agent.update_interval}'
                   f'InitEps:{agent.initial_epsilon}, TargetEps:{agent.target_epsilon},'
                   f'AlergiaEps:{agent.alergia_epsilon},Curiosity:{agent.curiosity_reward},'
                   f'Freeze:{agent.freeze_automaton_after}']
@@ -664,4 +665,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
 
 
 if __name__ == '__main__':
-    poql_experiment('corner', early_stopping_acc=1.)
+    poql_experiment('simple_showcase', early_stopping_acc=1.)
