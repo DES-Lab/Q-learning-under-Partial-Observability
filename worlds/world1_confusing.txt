@@ -1,0 +1,50 @@
+===Layout===
+
+#########
+#   #   #
+#   D  E#
+#   #   #
+##D######
+#   # G #
+#   D   #
+#   #   #
+#########
+
+===Abstraction===
+
+#########
+#111#222#
+#111D222#
+#111#222#
+##D######
+#222#111#
+#222D111#
+#222#111#
+#########
+
+// Optional mapping of integers/characters to their description/name
+
+1:garage
+2:corridor
+3:living_room
+4:toilet
+
+===Behaviour===
+
+#########
+#1  # 3 #
+# 2 D   #
+#1  # 2 #
+##D######
+# 1  #2 #
+#   D   #
+# 2 #3  #
+#########
+
+// Rules
+// <rule_id>-<action>-[(<new_action>:<probability>)+]
+
+1-up-[up:0.75, right:0.25]
+1-down-[down:0.75, right:0.25]
+2-left-[left:0.8, up:0.1, down:0.1]
+3-right-[right:0.7, down:0.2, left:0.1]

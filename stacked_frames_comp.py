@@ -139,12 +139,12 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
 
 
 if __name__ == '__main__':
-    exp = 'simple_showcase2'
+    exp = 'world1_confusing'
     num_training_episodes = 12000
     frame_size = 5
     poge = get_world(exp)
 
     # https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
 
-    stacked_experiment(exp, poge, ACKTR, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
+    stacked_experiment(exp, poge, A2C, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
                        verbose=True, early_stopping_acc=1)
