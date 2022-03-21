@@ -154,6 +154,15 @@ def get_world(world_id):
                        max_ep_len=150,
                        goal_reward=100,
                        step_penalty=0.1)
+    if world_id == 'simple_showcase2':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/simple_showcase2.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=False,
+                       indicate_wall=False,
+                       max_ep_len=150,
+                       goal_reward=200,
+                       step_penalty=0.1)
 
     assert env is not None
     return env

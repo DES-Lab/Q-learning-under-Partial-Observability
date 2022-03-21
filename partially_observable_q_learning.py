@@ -615,24 +615,24 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
-    if exp_name == 'simple_showcase':
+    if exp_name == 'simple_showcase' or exp_name == 'simple_showcase2':
         experiment_setup(exp_name,
                          env=env,
                          initial_sample_num=10000,
                          num_training_episodes=30000,
-                         update_interval=2000,
+                         update_interval=1000,
                          early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=12000,
+                         freeze_after_ep=10000,
                          verbose=verbose,
                          test_episodes=100,
-                         initial_epsilon=0.5,
-                         alergia_epsilon=0.1,
+                         initial_epsilon=0.4,
+                         alergia_epsilon=0.005,
                          re_init_epsilon=False,
-                         curiosity_reward=5,
+                         curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
 
 
 if __name__ == '__main__':
-    poql_experiment('simple_showcase', early_stopping_acc=1.)
+    poql_experiment('simple_showcase2', early_stopping_acc=1.)
