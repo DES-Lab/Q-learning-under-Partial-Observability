@@ -442,9 +442,10 @@ def experiment_setup(exp_name,
 
     trained_agent, statistics = train(env_data,
                                       agent,
-                                      num_training_episodes=num_training_episodes)
+                                      num_training_episodes=num_training_episodes,
+                                      verbose=verbose)
 
-    evaluate(env_data, trained_agent, test_episodes)
+    evaluate(env_data, trained_agent, test_episodes, verbose=verbose)
 
     if verbose:
         print(f'Final model constructed during learning saved to {exp_name}.dot')
@@ -453,7 +454,7 @@ def experiment_setup(exp_name,
     add_statistics_to_file(exp_name, statistics, statistic_interval_size=1000, subfolder='poql')
 
 
-def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
+def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose=True):
     env = get_world(exp_name)
     if env is None:
         print(f'Environment {exp_name} not found.')
@@ -467,6 +468,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=None,
                          verbose=verbose,
+                         alergia_model_type=model_type,
                          test_episodes=100)
     if exp_name == 'world1_confusing':
         experiment_setup(exp_name,
@@ -482,6 +484,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult',
                          verbose=verbose,
+                         alergia_model_type=model_type,
                          test_episodes=100)
     if exp_name == 'world2+rew':
         experiment_setup('world2+rew',
@@ -497,6 +500,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          re_init_epsilon=True,
                          initial_epsilon=0.9,
+                         alergia_model_type=model_type,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult')
@@ -514,6 +518,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
+                         alergia_model_type=model_type,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.95,
                          curiosity_rew_reduction_mode='mult')
@@ -529,6 +534,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          re_init_epsilon=True,
                          initial_epsilon=0.9,
+                         alergia_model_type=model_type,
                          curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -545,6 +551,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
+                         alergia_model_type=model_type,
                          curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -560,6 +567,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
+                         alergia_model_type=model_type,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -576,6 +584,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          alergia_epsilon=0.1,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
+                         alergia_model_type=model_type,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -592,6 +601,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
+                         alergia_model_type=model_type,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -608,6 +618,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
+                         alergia_model_type=model_type,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -624,6 +635,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.6,
                          re_init_epsilon=False,
+                         alergia_model_type=model_type,
                          curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -640,6 +652,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=False,
+                         alergia_model_type=model_type,
                          curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
@@ -658,6 +671,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          alergia_epsilon=0.005,
                          re_init_epsilon=True,
                          gamma=0.99,
+                         alergia_model_type=model_type,
                          curiosity_reward=None,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'

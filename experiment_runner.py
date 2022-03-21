@@ -16,19 +16,20 @@ early_stopping_acc = 1.01
 
 
 def run_poql_experiments():
-    num_runs = len(world_ids) * repeat_each
+    num_runs = len(world_ids) * repeat_each * 2
     i = 0
     for w in world_ids:
         for _ in range(repeat_each):
-            poql_experiment(w, early_stopping_acc=early_stopping_acc, verbose=verbose)
-            i += 1
-            print(f"Percentage of complete POQL experiments: {round(i / num_runs, 2)}%")
+            for model_type in ['mdp', 'smm']:
+                poql_experiment(w, early_stopping_acc=early_stopping_acc, model_type=model_type, verbose=verbose)
+                i += 1
+                print(f"Percentage of complete POQL experiments: {round(i / num_runs, 2)}%")
 
 
 def run_stacked_experiments():
     algs = [DQN, A2C, ACKTR]
     repeat_each = 5
-    num_runs = len(algs) * len(world_ids) * repeat_each # * 2 # for frame size of 5 and 10
+    num_runs = len(algs) * len(world_ids) * repeat_each  # * 2 # for frame size of 5 and 10
     i = 0
     frame_size = 5
     for w in world_ids:
@@ -57,6 +58,7 @@ def run_lstm_experiments():
                                 verbose=verbose)
                 i += 1
                 print(f"Percentage of complete Stacked experiments: {round(i / num_runs, 2)}%")
+
 
 if __name__ == '__main__':
     run_poql_experiments()
