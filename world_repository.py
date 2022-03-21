@@ -160,7 +160,7 @@ def get_world(world_id):
                        world_file_path='worlds/simple_showcase.txt',
                        is_partially_obs=True,
                        one_time_rewards=True,
-                       indicate_wall=False,
+                       indicate_wall=True,
                        max_ep_len=150,
                        goal_reward=100,
                        step_penalty=0.1)

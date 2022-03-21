@@ -665,4 +665,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
 
 
 if __name__ == '__main__':
-    poql_experiment('simple_showcase', early_stopping_acc=1.)
+    poql_experiment('maze', early_stopping_acc=1.)
