@@ -96,7 +96,6 @@ def evaluate_dqn(model, env, num_episodes=100, verbose=True):
             action, _ = model.predict(obs)
             steps += 1
             obs, rewards, done, info = env.step(action)
-
             if rewards == env.poge_env.goal_reward:
                 goal_reached += 1
 
@@ -140,12 +139,12 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
 
 
 if __name__ == '__main__':
-    exp = 'world1+rew'
+    exp = 'simple_showcase'
     num_training_episodes = 12000
-    frame_size = 10
+    frame_size = 5
     poge = get_world(exp)
 
     # https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
 
     stacked_experiment(exp, poge, ACKTR, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
-                       verbose=True)
+                       verbose=True, early_stopping_acc=1)

@@ -599,8 +599,8 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
-    if exp_name == 'thin_maze':
-        experiment_setup('thin_maze',
+    if exp_name == 'thin_maze' or exp_name == 'maze':
+        experiment_setup(exp_name,
                          env=env,
                          initial_sample_num=10000,
                          num_training_episodes=30000,
@@ -615,7 +615,24 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
+    if exp_name == 'simple_showcase':
+        experiment_setup(exp_name,
+                         env=env,
+                         initial_sample_num=10000,
+                         num_training_episodes=30000,
+                         update_interval=2000,
+                         early_stopping_threshold=early_stopping_acc,
+                         freeze_after_ep=12000,
+                         verbose=verbose,
+                         test_episodes=100,
+                         initial_epsilon=0.5,
+                         alergia_epsilon=0.1,
+                         re_init_epsilon=False,
+                         curiosity_reward=5,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
 
 
 if __name__ == '__main__':
-    poql_experiment('thin_maze', early_stopping_acc=1.01)
+    poql_experiment('simple_showcase', early_stopping_acc=1.)

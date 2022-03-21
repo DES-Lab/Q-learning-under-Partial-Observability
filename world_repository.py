@@ -136,6 +136,24 @@ def get_world(world_id):
                        max_ep_len=200,
                        goal_reward=100,
                        step_penalty=0.1)
+    if world_id == 'maze':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/maze.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=True,
+                       max_ep_len=150,
+                       goal_reward=100,
+                       step_penalty=0.1)
+    if world_id == 'simple_showcase':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/simple_showcase.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=False,
+                       max_ep_len=150,
+                       goal_reward=100,
+                       step_penalty=0.1)
 
     assert env is not None
     return env
