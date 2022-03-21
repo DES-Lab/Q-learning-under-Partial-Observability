@@ -8,3 +8,8 @@
 0,100
 -20.0,113.9
 200.0,63.0
+"POQL, 30000, Update Interval:1000InitEps:0.9, TargetEps:0.1,AlergiaEps:0.005,Curiosity:5,Freeze:12000"
+1000,2000
+0,100
+-20.0,113.9
+200.0,63.0

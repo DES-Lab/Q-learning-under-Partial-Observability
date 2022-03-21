@@ -139,7 +139,7 @@ def stacked_experiment(experiment_name, poge_env: StackedPoge, learning_alg, tra
 
 
 if __name__ == '__main__':
-    exp = 'world1_confusing'
+    exp = 'gravity'
     num_training_episodes = 12000
     frame_size = 5
     poge = get_world(exp)

@@ -1,5 +1,6 @@
 import random
 
+from aalpy.automata.StochasticMealyMachine import smm_to_mdp_conversion
 from aalpy.learning_algs import run_Alergia
 
 import numpy as np
@@ -23,6 +24,7 @@ class PartiallyObservableRlAgent:
                  initial_epsilon=0.9,
                  target_epsilon=0.1,
                  alergia_epsilon=0.005,
+                 alergia_model_type='mdp',
                  alpha=0.1,
                  gamma=0.9,
                  early_stopping_threshold=None,
@@ -44,6 +46,7 @@ class PartiallyObservableRlAgent:
         self.update_interval = update_interval
         self.early_stopping_threshold = early_stopping_threshold
         self.linear_epsilon = linear_epsilon
+        self.alergia_model_type = alergia_model_type
 
         # curiosity params
         self.curiosity_enabled = False
@@ -74,9 +77,12 @@ class PartiallyObservableRlAgent:
         State space of learned model is used to extend the q-table.
         """
         new_model = run_Alergia(self.automata_learning_samples,
-                                automaton_type="mdp",
+                                automaton_type=self.alergia_model_type,
                                 eps=self.alergia_epsilon,
                                 print_info=self.verbose)
+        if self.alergia_model_type == 'smm':
+           new_model = smm_to_mdp_conversion(new_model)
+
         new_n_model_states = len(new_model.states)
 
         self.automaton_model = new_model
@@ -222,7 +228,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
         steps = 0
 
         extended_state = agent.get_extended_state(state)
-        sample = ['Init']
+        sample = [] if agent.alergia_model_type == 'smm' else ['Init']
         rl_sample = []
 
         while not done:
@@ -301,7 +307,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
 
                 if agent.curiosity_reward < 0:
                     agent.curiosity_reward = 0
-            print(f"Goal reached in {round((goal_reached_frequency / agent.update_interval) * 100,2)} "
+            print(f"Goal reached in {round((goal_reached_frequency / agent.update_interval) * 100, 2)} "
                   f"percent of the cases during training.")
 
             # if freezing is enabled do not update the model
@@ -385,6 +391,7 @@ def experiment_setup(exp_name,
                      initial_epsilon=0.9,
                      target_epsilon=0.1,
                      alergia_epsilon=0.005,
+                     alergia_model_type='smm',
                      alpha=0.1,
                      gamma=0.9,
                      early_stopping_threshold=None,
@@ -395,16 +402,21 @@ def experiment_setup(exp_name,
                      curiosity_reward=None,
                      curiosity_reward_reduction=None,
                      curiosity_rew_reduction_mode=None):
-
     input_al = list(env.actions_dict.keys())
     reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
     env_data = (env, input_al, reverse_action_dict, env.observation_space.n)
 
     if verbose:
         print('Initial sampling and model construction started')
-    initial_samples = get_initial_data(env, input_al, initial_sample_num=initial_sample_num,
-                                       min_seq_len=min_seq_len, max_seq_len=max_seq_len)
-    model = run_Alergia(initial_samples, eps=alergia_epsilon, automaton_type="mdp", print_info=verbose)
+    initial_samples = get_initial_data(env, input_al,
+                                       initial_sample_num=initial_sample_num,
+                                       min_seq_len=min_seq_len,
+                                       max_seq_len=max_seq_len,
+                                       is_smm=alergia_model_type == 'smm')
+
+    model = run_Alergia(initial_samples, eps=alergia_epsilon, automaton_type=alergia_model_type, print_info=verbose)
+    if alergia_model_type == 'smm':
+        model = smm_to_mdp_conversion(model)
 
     env.training_episode = 0
     agent = PartiallyObservableRlAgent(model,
@@ -415,6 +427,7 @@ def experiment_setup(exp_name,
                                        initial_epsilon=initial_epsilon,
                                        target_epsilon=target_epsilon,
                                        alergia_epsilon=alergia_epsilon,
+                                       alergia_model_type=alergia_model_type,
                                        alpha=alpha,
                                        gamma=gamma,
                                        early_stopping_threshold=early_stopping_threshold,
@@ -444,7 +457,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
     if env is None:
         print(f'Environment {exp_name} not found.')
         return
-    if exp_name == 'world1' or exp_name == 'world1_confusing':
+    if exp_name == 'world1':
         experiment_setup(exp_name,
                          env=env,
                          initial_sample_num=4000,
@@ -515,7 +528,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          re_init_epsilon=True,
                          initial_epsilon=0.9,
-                         curiosity_reward=None,
+                         curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
@@ -531,7 +544,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
-                         curiosity_reward=None,
+                         curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
@@ -603,12 +616,12 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
                          env=env,
                          initial_sample_num=10000,
                          num_training_episodes=30000,
-                         update_interval=1000,
+                         update_interval=2000,
                          early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=12000,
                          verbose=verbose,
                          test_episodes=100,
-                         initial_epsilon=0.9,
+                         initial_epsilon=0.6,
                          re_init_epsilon=False,
                          curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
@@ -651,4 +664,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, verbose=True):
 
 
 if __name__ == '__main__':
-    poql_experiment('world1_confusing', early_stopping_acc=1.)
+    poql_experiment('corner', early_stopping_acc=1.)

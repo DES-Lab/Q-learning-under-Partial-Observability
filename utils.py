@@ -240,11 +240,11 @@ def visualize_episode(env, coordinate_list, step_time=0.7):
         sleep(step_time)
 
 
-def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50, incl_rewards=False):
+def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50, incl_rewards=False, is_smm=False):
     # Generate random initial samples
     random_samples = []
     for _ in range(initial_sample_num):
-        sample = ['Init']
+        sample = [] if is_smm else ['Init']
         env.reset()
         for _ in range(random.randint(min_seq_len, max_seq_len)):
             i = random.choice(input_al)
