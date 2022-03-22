@@ -1,7 +1,9 @@
+import random
+
 from aalpy.SULs import MdpSUL
 from aalpy.automata import MdpState, Mdp
 from aalpy.oracles import RandomWalkEqOracle
-from aalpy.learning_algs import run_stochastic_Lstar
+from aalpy.learning_algs import run_stochastic_Lstar, run_Alergia
 from aalpy.utils import visualize_automaton
 
 
@@ -33,15 +35,33 @@ def get_small_pomdp():
 
 
 mdp = get_small_pomdp()
-
-# #
-# exit()
 input_al = mdp.get_input_alphabet()
 sul = MdpSUL(mdp)
-eq_oracle = RandomWalkEqOracle(input_al, sul)
-
-learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='mdp', min_rounds=100, strategy='chi2')
-
-visualize_automaton(learned_model)
 
 
+def passive():
+    data = []
+    for _ in range(10000):
+        sample = []
+        sul.pre()
+        for _ in range(20):
+            i = random.choice(input_al)
+            o = sul.step(i)
+            sample.append((i, o))
+        data.append(sample)
+
+    model = run_Alergia(data, automaton_type='smm')
+    visualize_automaton(model)
+
+
+def active():
+    eq_oracle = RandomWalkEqOracle(input_al, sul)
+
+    learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='mdp', min_rounds=100,
+                                         strategy='chi2')
+
+    visualize_automaton(learned_model)
+
+
+if __name__ == '__main__':
+    passive()
