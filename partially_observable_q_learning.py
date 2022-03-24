@@ -82,7 +82,6 @@ class PartiallyObservableRlAgent:
                                  eps=self.alergia_epsilon,
                                  path_to_jAlergia_jar='alergia.jar',
                                  heap_memory='-Xmx12g')
-        print(f'Alergia learned {new_model.size} state model.')
 
         if self.alergia_model_type == 'smm':
             new_model = smm_to_mdp_conversion(new_model)
@@ -419,10 +418,11 @@ def experiment_setup(exp_name,
                                        max_seq_len=max_seq_len,
                                        is_smm=alergia_model_type == 'smm')
 
+    deleteSampleFile()
     writeSamplesToFile(initial_samples)
     model = run_JAlergia('alergiaSamples.txt', eps=alergia_epsilon, automaton_type=alergia_model_type,
                          path_to_jAlergia_jar='alergia.jar', heap_memory='-Xmx12g')
-    print(f'Alergia learned {model.size} state model.')
+
     if alergia_model_type == 'smm':
         model = smm_to_mdp_conversion(model)
 
