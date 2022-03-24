@@ -116,7 +116,7 @@ def get_world(world_id):
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
-                       max_ep_len=400,
+                       max_ep_len=200,
                        goal_reward=100,
                        step_penalty=2)
     if world_id == 'world2+rew':

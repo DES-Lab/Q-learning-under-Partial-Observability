@@ -240,7 +240,8 @@ def visualize_episode(env, coordinate_list, step_time=0.7):
         sleep(step_time)
 
 
-def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50, incl_rewards=False, is_smm=False):
+def get_initial_data(env, input_al, initial_sample_num=5000, min_seq_len=10, max_seq_len=50, incl_rewards=False,
+                     is_smm=False):
     # Generate random initial samples
     random_samples = []
     for _ in range(initial_sample_num):
@@ -322,3 +323,24 @@ def add_statistics_to_file(experiment_name, statistics, statistic_interval_size,
         writer.writerow(goal_reached)
         writer.writerow(avg_reward)
         writer.writerow(avg_step)
+
+
+def writeSamplesToFile(samples, path="alergiaSamples.txt"):
+    isSMM = False
+    if isinstance(samples[0][0], tuple):
+        isSMM = True
+    with open(path, 'a') as f:
+        for sample in samples:
+            s = "" if isSMM else f'{str(sample.pop(0))}'
+            for i, o in sample:
+                s += f',{i},{o}'
+            f.write(s + '\n')
+
+    f.close()
+    samples.clear()
+
+
+def deleteSampleFile(path="alergiaSamples.txt"):
+    import os
+    if os.path.exists(path):
+        os.remove(path)

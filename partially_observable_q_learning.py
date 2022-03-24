@@ -1,12 +1,12 @@
 import random
 
 from aalpy.automata.StochasticMealyMachine import smm_to_mdp_conversion
-from aalpy.learning_algs import run_Alergia
+from aalpy.learning_algs import run_JAlergia
 
 import numpy as np
 from aalpy.utils import save_automaton_to_file
 
-from utils import get_initial_data, add_statistics_to_file
+from utils import get_initial_data, add_statistics_to_file, writeSamplesToFile, deleteSampleFile
 from world_repository import get_world
 
 
@@ -76,12 +76,16 @@ class PartiallyObservableRlAgent:
         With all observed samples constructs the new model with the ALERGIA algorithm.
         State space of learned model is used to extend the q-table.
         """
-        new_model = run_Alergia(self.automata_learning_samples,
-                                automaton_type=self.alergia_model_type,
-                                eps=self.alergia_epsilon,
-                                print_info=self.verbose)
+        writeSamplesToFile(self.automata_learning_samples)
+        new_model = run_JAlergia('alergiaSamples.txt',
+                                 automaton_type=self.alergia_model_type,
+                                 eps=self.alergia_epsilon,
+                                 path_to_jAlergia_jar='alergia.jar',
+                                 heap_memory='-Xmx12g')
+        print(f'Alergia learned {new_model.size} state model.')
+
         if self.alergia_model_type == 'smm':
-           new_model = smm_to_mdp_conversion(new_model)
+            new_model = smm_to_mdp_conversion(new_model)
 
         new_n_model_states = len(new_model.states)
 
@@ -415,7 +419,10 @@ def experiment_setup(exp_name,
                                        max_seq_len=max_seq_len,
                                        is_smm=alergia_model_type == 'smm')
 
-    model = run_Alergia(initial_samples, eps=alergia_epsilon, automaton_type=alergia_model_type, print_info=verbose)
+    writeSamplesToFile(initial_samples)
+    model = run_JAlergia('alergiaSamples.txt', eps=alergia_epsilon, automaton_type=alergia_model_type,
+                         path_to_jAlergia_jar='alergia.jar', heap_memory='-Xmx12g')
+    print(f'Alergia learned {model.size} state model.')
     if alergia_model_type == 'smm':
         model = smm_to_mdp_conversion(model)
 
@@ -452,6 +459,8 @@ def experiment_setup(exp_name,
     save_automaton_to_file(agent.automaton_model, f'learned_models/{exp_name}')
 
     add_statistics_to_file(exp_name, statistics, statistic_interval_size=1000, subfolder='poql')
+
+    deleteSampleFile()
 
 
 def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose=True):
@@ -679,4 +688,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 
 if __name__ == '__main__':
-    poql_experiment('maze', early_stopping_acc=1.)
+    poql_experiment('corner', early_stopping_acc=1., model_type='smm')
