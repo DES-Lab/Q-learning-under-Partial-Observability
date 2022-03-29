@@ -14,7 +14,7 @@
 #CCAAAAAAB#
 #CCACBB#BB#
 #CABA###CB#
-#CC#ABB#AB#
+#CC#ABB#AH#
 #AC#ACCABB#
 ###########
 
