@@ -482,16 +482,27 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
     if exp_name == 'world1_confusing':
         experiment_setup(exp_name,
                          env=env,
-                         initial_sample_num=4000,
+                         initial_sample_num=10000,
                          num_training_episodes=30000,
-                         update_interval=1000,
+                         update_interval=2000,
                          early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=7000,
+                         freeze_after_ep=16000,
                          re_init_epsilon=False,
-                         alergia_epsilon=0.01,
-                         curiosity_reward=1,
+                         alergia_epsilon=0.005,
+                         curiosity_reward=5,
                          curiosity_reward_reduction=0.99,
                          curiosity_rew_reduction_mode='mult',
+                         verbose=verbose,
+                         alergia_model_type=model_type,
+                         test_episodes=100)
+    if exp_name == 'world1_paper':
+        experiment_setup(exp_name,
+                         env=env,
+                         initial_sample_num=4000,
+                         num_training_episodes=10000,
+                         update_interval=1000,
+                         early_stopping_threshold=early_stopping_acc,
+                         freeze_after_ep=8000,
                          verbose=verbose,
                          alergia_model_type=model_type,
                          test_episodes=100)
@@ -690,4 +701,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 
 if __name__ == '__main__':
-    poql_experiment('gravity', early_stopping_acc=0.95, model_type='mdp')
+    poql_experiment('world1_paper', early_stopping_acc=0.95, model_type='mdp')
