@@ -83,8 +83,8 @@ class PartiallyObservableRlAgent:
                                  path_to_jAlergia_jar='alergia.jar',
                                  heap_memory='-Xmx12g')
 
-        if self.alergia_model_type == 'smm':
-            new_model = smm_to_mdp_conversion(new_model)
+        # if self.alergia_model_type == 'smm':
+        #     new_model = smm_to_mdp_conversion(new_model)
 
         new_n_model_states = len(new_model.states)
 
@@ -423,8 +423,8 @@ def experiment_setup(exp_name,
     model = run_JAlergia('alergiaSamples.txt', eps=alergia_epsilon, automaton_type=alergia_model_type,
                          path_to_jAlergia_jar='alergia.jar', heap_memory='-Xmx12g')
 
-    if alergia_model_type == 'smm':
-        model = smm_to_mdp_conversion(model)
+    # if alergia_model_type == 'smm':
+    #     model = smm_to_mdp_conversion(model)
 
     env.training_episode = 0
     agent = PartiallyObservableRlAgent(model,
@@ -465,6 +465,7 @@ def experiment_setup(exp_name,
 
 def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose=True):
     env = get_world(exp_name)
+
     if env is None:
         print(f'Environment {exp_name} not found.')
         return
@@ -701,4 +702,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 
 if __name__ == '__main__':
-    poql_experiment('simple_showcase2', early_stopping_acc=0.95, model_type='mdp')
+    poql_experiment('world1_confusing', early_stopping_acc=0.95, model_type='mdp')

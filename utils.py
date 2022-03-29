@@ -331,9 +331,10 @@ def writeSamplesToFile(samples, path="alergiaSamples.txt"):
         isSMM = True
     with open(path, 'a') as f:
         for sample in samples:
-            s = "" if isSMM else f'{str(sample.pop(0))}'
+            s = "" if isSMM else f'{str(sample.pop(0))},'
             for i, o in sample:
-                s += f',{i},{o}'
+                s += f'{i},{o},'
+            s = s[:-1]
             f.write(s + '\n')
 
     f.close()
