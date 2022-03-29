@@ -1,13 +1,64 @@
 import random
 
+import gym
 from aalpy.automata.StochasticMealyMachine import smm_to_mdp_conversion
 from aalpy.learning_algs import run_JAlergia
 
 import numpy as np
 from aalpy.utils import save_automaton_to_file
+from gym.spaces import Box
 
 from utils import get_initial_data, add_statistics_to_file, writeSamplesToFile, deleteSampleFile
 from world_repository import get_world
+
+
+class StackedPoge(gym.Env):
+    def __init__(self, poge_env, stacked_frames_num=2):
+        self.poge_env = poge_env
+        self.frame_size = stacked_frames_num
+        self.action_space = self.poge_env.action_space
+        self.actions_dict = self.poge_env.actions_dict
+        self.training_episode = self.poge_env.training_episode
+        self.goal_reward = self.poge_env.goal_reward
+
+        num_abstract_tiles = self.poge_env.observation_space.n
+        self.empty_obs = num_abstract_tiles
+        self.observation_space = Box(low=0, high=num_abstract_tiles, shape=(1, self.frame_size))
+        self.poge_env.one_hot_2_state_map[self.empty_obs] = 'placeholder'
+        self.observation_frame = [self.empty_obs for i in range(self.frame_size)]
+        self.observation_space_size = pow(self.empty_obs, stacked_frames_num)
+        self.reverse_action_dict = dict([(v, k) for k, v in self.poge_env.actions_dict.items()])
+
+    def step(self, action):
+        out, rew, done, info = self.poge_env.step(action)
+        self._update_output(out)
+        return self.to_np_array(), rew, done, info
+
+    def decode(self, x):
+        return '_'.join(str(self.poge_env.decode(i)) for i in x[0])
+
+    def to_decimal(self, number):
+        result = 0
+        for index, character in enumerate(number):
+            result += int(character) * self.frame_size ** index
+        return result
+
+    def reset(self):
+        self.observation_frame = [self.empty_obs for i in range(self.frame_size)]
+        out = self.poge_env.reset()
+        self._update_output(out)
+        return self.to_decimal(self.to_np_array()[0])
+
+    def _update_output(self, new_out):
+        self.observation_frame.pop(0)
+        self.observation_frame.append(new_out)
+
+    def to_np_array(self):
+        arr = np.array([self.observation_frame])
+        return arr
+
+    def render(self, mode='human'):
+        pass
 
 
 class PartiallyObservableRlAgent:
@@ -205,7 +256,7 @@ class PartiallyObservableRlAgent:
                 self.epsilon *= decrement
 
 
-def train(env_data, agent, num_training_episodes, verbose=True, statistics_interval=1000):
+def train(env, agent, num_training_episodes, verbose=True, statistics_interval=1000):
     """
     Trains a partially-observable q-agent.
     """
@@ -218,7 +269,6 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
     if verbose:
         print('Training started')
 
-    env, input_al, reverse_action_dict, env.observation_space.n = env_data
     frozen = False
     rl_samples = []
     goal_reached_frequency = 0
@@ -251,7 +301,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
                 goal_reached_frequency += 1
 
             output = env.decode(next_state)
-            mdp_action = reverse_action_dict[action]
+            mdp_action = env.reverse_action_dict[action]
 
             # perform a step in the learned automaton (in the agent)
             add_reward = agent.automaton_step(mdp_action, output, agent.curiosity_reward)
@@ -262,6 +312,7 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
             sample.append((mdp_action, output))
 
             # update the extended q-table
+            next_state = env.to_decimal(next_state[0])
             next_extended_state = agent.get_extended_state(next_state)
             old_value = agent.q_table[extended_state, action]
             next_max = np.max(agent.q_table[next_extended_state])
@@ -290,12 +341,12 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
 
         # For statistics
         if episode % statistics_interval == 0:
-            statistics.append(evaluate(env_data, agent, verbose=False))
+            statistics.append(evaluate(env, agent, verbose=False))
 
         # Update interval (for model learning and q-table extension)
         if episode % agent.update_interval == 0:
             # Early stopping
-            goal_reached, _, _ = evaluate(env_data, agent, verbose=True)
+            goal_reached, _, _ = evaluate(env, agent, verbose=True)
             if agent.early_stopping_threshold:
                 if goal_reached / 100 >= agent.early_stopping_threshold:
                     print('Early stopping threshold exceeded, training stopped.')
@@ -339,11 +390,10 @@ def train(env_data, agent, num_training_episodes, verbose=True, statistics_inter
     return agent, statistics
 
 
-def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, verbose=True):
+def evaluate(env, po_rl_agent: PartiallyObservableRlAgent, episodes=100, verbose=True):
     """
     Evaluates the partially-observable q-agent.
     """
-    env, input_al, reverse_action_dict, env.observation_space.n = env_data
 
     total_steps = 0
     goals_reached = 0
@@ -367,7 +417,8 @@ def evaluate(env_data, po_rl_agent: PartiallyObservableRlAgent, episodes=100, ve
 
             # step in MDP
             output = env.decode(state)
-            mdp_action = reverse_action_dict[action]
+            mdp_action = env.reverse_action_dict[action]
+            state = env.to_decimal(state[0])
 
             po_rl_agent.automaton_step(mdp_action, output, 0)
 
@@ -408,7 +459,6 @@ def experiment_setup(exp_name,
                      curiosity_rew_reduction_mode=None):
     input_al = list(env.actions_dict.keys())
     reverse_action_dict = dict([(v, k) for k, v in env.actions_dict.items()])
-    env_data = (env, input_al, reverse_action_dict, env.observation_space.n)
 
     if verbose:
         print('Initial sampling and model construction started')
@@ -429,7 +479,7 @@ def experiment_setup(exp_name,
     env.training_episode = 0
     agent = PartiallyObservableRlAgent(model,
                                        initial_samples,
-                                       env.observation_space.n,
+                                       env.observation_space_size,
                                        env.action_space.n,
                                        update_interval=update_interval,
                                        initial_epsilon=initial_epsilon,
@@ -447,12 +497,12 @@ def experiment_setup(exp_name,
         assert curiosity_reward_reduction is not None and curiosity_rew_reduction_mode is not None
         agent.set_curiosity_params(curiosity_reward, curiosity_reward_reduction, curiosity_rew_reduction_mode)
 
-    trained_agent, statistics = train(env_data,
+    trained_agent, statistics = train(env,
                                       agent,
                                       num_training_episodes=num_training_episodes,
                                       verbose=verbose)
 
-    evaluate(env_data, trained_agent, test_episodes, verbose=verbose)
+    evaluate(env, trained_agent, test_episodes, verbose=verbose)
 
     if verbose:
         print(f'Final model constructed during learning saved to {exp_name}.dot')
@@ -465,6 +515,7 @@ def experiment_setup(exp_name,
 
 def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose=True):
     env = get_world(exp_name)
+    env = StackedPoge(env)
     if env is None:
         print(f'Environment {exp_name} not found.')
         return
@@ -701,4 +752,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 
 if __name__ == '__main__':
-    poql_experiment('simple_showcase2', early_stopping_acc=0.95, model_type='mdp')
+    poql_experiment('world2', early_stopping_acc=0.95, model_type='mdp')
