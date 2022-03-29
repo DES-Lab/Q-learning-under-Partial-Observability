@@ -182,6 +182,14 @@ def get_world(world_id):
                        max_ep_len=100,
                        goal_reward=200,
                        step_penalty=0.1)
-
+    if world_id == 'minecraft':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/minecraft.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=True,
+                       max_ep_len=200,
+                       goal_reward=100,
+                       step_penalty=0.1)
     assert env is not None
     return env
