@@ -191,5 +191,14 @@ def get_world(world_id):
                        max_ep_len=200,
                        goal_reward=100,
                        step_penalty=0.1)
+    if world_id == 'mid_line':
+        env = gym.make(id='poge-v1',
+                       world_file_path='worlds/mid_line.txt',
+                       is_partially_obs=True,
+                       one_time_rewards=True,
+                       indicate_wall=True,
+                       max_ep_len=500,
+                       goal_reward=100,
+                       step_penalty=0.1)
     assert env is not None
     return env
