@@ -14,7 +14,7 @@ verbose = False
 # put to 0.98 if you want to stop when goal is reached in 98% of test episodes
 early_stopping_acc = 1.0
 #
-num_ep = 20000
+num_ep = 25000
 
 def run_poql_experiments():
     num_runs = len(world_ids) * repeat_each * 2
