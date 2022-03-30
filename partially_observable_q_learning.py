@@ -685,9 +685,27 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          env=env,
                          initial_sample_num=10000,
                          num_training_episodes=30000,
-                         update_interval=1000,
+                         update_interval=2000,
                          early_stopping_threshold=early_stopping_acc,
                          freeze_after_ep=10000,
+                         verbose=verbose,
+                         test_episodes=100,
+                         initial_epsilon=0.4,
+                         alergia_epsilon=0.1,
+                         re_init_epsilon=True,
+                         alergia_model_type=model_type,
+                         curiosity_reward=None,
+                         curiosity_reward_reduction=0.9,
+                         curiosity_rew_reduction_mode='mult'
+                         )
+    if exp_name == 'minecraft' or exp_name == 'mid_line':
+        experiment_setup(exp_name,
+                         env=env,
+                         initial_sample_num=10000,
+                         num_training_episodes=20000,
+                         update_interval=1000,
+                         early_stopping_threshold=early_stopping_acc,
+                         freeze_after_ep=14000,
                          verbose=verbose,
                          test_episodes=100,
                          initial_epsilon=0.4,
@@ -702,4 +720,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 
 if __name__ == '__main__':
-    poql_experiment('world1_confusing', early_stopping_acc=0.95, model_type='mdp')
+    poql_experiment('gravity2', early_stopping_acc=1, model_type='mdp')
