@@ -687,14 +687,14 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          num_training_episodes=30000,
                          update_interval=2000,
                          early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=10000,
+                         freeze_after_ep=20000,
                          verbose=verbose,
                          test_episodes=100,
-                         initial_epsilon=0.4,
-                         alergia_epsilon=0.1,
+                         initial_epsilon=0.9,
+                         alergia_epsilon=0.05,
                          re_init_epsilon=True,
                          alergia_model_type=model_type,
-                         curiosity_reward=None,
+                         curiosity_reward=5,
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
@@ -708,10 +708,9 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          freeze_after_ep=14000,
                          verbose=verbose,
                          test_episodes=100,
-                         initial_epsilon=0.4,
+                         initial_epsilon=0.3,
                          alergia_epsilon=0.1,
                          re_init_epsilon=True,
-                         gamma=0.99,
                          alergia_model_type=model_type,
                          curiosity_reward=10,
                          curiosity_reward_reduction=0.9,
@@ -720,4 +719,4 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 
 if __name__ == '__main__':
-    poql_experiment('gravity2', early_stopping_acc=1, model_type='mdp')
+    poql_experiment('simple_showcase2', early_stopping_acc=1, model_type='mdp')

@@ -179,7 +179,7 @@ def get_world(world_id):
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
-                       max_ep_len=100,
+                       max_ep_len=200,
                        goal_reward=200,
                        step_penalty=0.1)
     if world_id == 'minecraft':
