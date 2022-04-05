@@ -10,7 +10,7 @@ def get_world(world_id):
     env = None
     if world_id == 'gravity':
         env = gym.make(id='poge-v1',
-                       world_file_path='worlds/big_gravity_2.txt',
+                       world_file_path='worlds/gravity.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
@@ -19,7 +19,7 @@ def get_world(world_id):
                        step_penalty=0.2)
     if world_id == 'officeWorld':
         env = gym.make(id='poge-v1',
-                       world_file_path='worlds/world1.txt',
+                       world_file_path='worlds/officeWorld.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
@@ -28,7 +28,7 @@ def get_world(world_id):
                        step_penalty=0.1)
     if world_id == 'confusingOfficeWorld':
         env = gym.make(id='poge-v1',
-                       world_file_path='worlds/world1_confusing.txt',
+                       world_file_path='worlds/confusingOfficeWorld.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,
@@ -37,7 +37,7 @@ def get_world(world_id):
                        step_penalty=0.1)
     if world_id == 'thinMaze':
         env = gym.make(id='poge-v1',
-                       world_file_path='worlds/simple_showcase2.txt',
+                       world_file_path='worlds/thinMaze.txt',
                        is_partially_obs=True,
                        one_time_rewards=False,
                        indicate_wall=True,

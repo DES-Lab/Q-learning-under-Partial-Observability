@@ -80,7 +80,7 @@ def passive():
 
     model = run_Alergia(data, automaton_type='smm')
     model = smm_to_mdp_conversion(model)
-    visualize_automaton(model)
+    visualize_automaton(model, path="PassivePOMDPApprix")
 
 
 def active():
@@ -89,10 +89,10 @@ def active():
     learned_model = run_stochastic_Lstar(input_al, sul, eq_oracle, automaton_type='mdp', min_rounds=100,
                                          strategy='chi2')
 
-    visualize_automaton(learned_model)
+    visualize_automaton(learned_model, path="ActivePOMDPApprox")
 
 
 if __name__ == '__main__':
-    visualize_automaton(pomdp)
+    visualize_automaton(pomdp, path='POMDP')
     passive()
     # active()
