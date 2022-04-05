@@ -5,8 +5,6 @@ import gym
 from aalpy.base import SUL
 from gym.spaces import Discrete
 
-from tried_ideas.prism_schedulers import PrismInterface
-
 
 class CookieDomain:
     def __init__(self):
@@ -190,40 +188,6 @@ def process_output(env, output, reward=0):
         output = f'{output}_r_{reward}'
 
     return output
-
-
-def test_model(model, env, input_al, num_episodes, max_ep_len=100):
-    num_steps_per_ep = []
-    goal_reached = 0
-
-    prism_interface = PrismInterface("GOAL", model)
-    print(f'Goal Reachability: {prism_interface.property_val}')
-
-    for _ in range(num_episodes):
-        step_counter = 0
-        scheduler_step_valid = True
-        env.reset()
-        prism_interface.reset()
-        while True:
-            if step_counter == max_ep_len:
-                break
-            i = prism_interface.get_input()
-            if not scheduler_step_valid or i is None:
-                i = random.choice(input_al)
-            encoded_i = env.actions_dict[i]
-            o, r, _, _ = env.step(encoded_i)
-            o = process_output(env, o, r)
-            step_counter += 1
-            scheduler_step_valid = prism_interface.step_to(i, o)
-            if r == env.goal_reward:
-                goal_reached += 1
-                break
-
-        num_steps_per_ep.append(step_counter)
-
-    print(f'Tested on {num_episodes} episodes:')
-    print(f'Goal reached  : {goal_reached}')
-    print(f'Avg. step count : {mean(num_steps_per_ep)}')
 
 
 def visualize_episode(env, coordinate_list, step_time=0.7):

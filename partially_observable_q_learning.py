@@ -1,9 +1,8 @@
 import random
-
-from aalpy.automata.StochasticMealyMachine import smm_to_mdp_conversion
-from aalpy.learning_algs import run_JAlergia
+import sys
 
 import numpy as np
+from aalpy.learning_algs import run_JAlergia
 from aalpy.utils import save_automaton_to_file
 
 from utils import get_initial_data, add_statistics_to_file, writeSamplesToFile, deleteSampleFile
@@ -469,7 +468,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
     if env is None:
         print(f'Environment {exp_name} not found.')
         return
-    if exp_name == 'world1':
+    if exp_name == 'officeWorld':
         experiment_setup(exp_name,
                          env=env,
                          initial_sample_num=4000,
@@ -480,7 +479,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          verbose=verbose,
                          alergia_model_type=model_type,
                          test_episodes=100)
-    if exp_name == 'world1_confusing':
+    if exp_name == 'confusingOfficeWorld':
         experiment_setup(exp_name,
                          env=env,
                          initial_sample_num=10000,
@@ -497,53 +496,6 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          verbose=verbose,
                          alergia_model_type=model_type,
                          test_episodes=100)
-    if exp_name == 'world1_paper':
-        experiment_setup(exp_name,
-                         env=env,
-                         initial_sample_num=4000,
-                         num_training_episodes=10000,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=8000,
-                         verbose=verbose,
-                         alergia_model_type=model_type,
-                         test_episodes=100)
-    if exp_name == 'world2+rew':
-        experiment_setup('world2+rew',
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=120000,
-                         min_seq_len=30,
-                         max_seq_len=100,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=40000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         re_init_epsilon=True,
-                         initial_epsilon=0.9,
-                         alergia_model_type=model_type,
-                         curiosity_reward=None,
-                         curiosity_reward_reduction=0.99,
-                         curiosity_rew_reduction_mode='mult')
-    if exp_name == 'world2':
-        experiment_setup('world2',
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=80000,
-                         min_seq_len=30,
-                         max_seq_len=100,
-                         update_interval=2000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=20000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=True,
-                         alergia_model_type=model_type,
-                         curiosity_reward=None,
-                         curiosity_reward_reduction=0.95,
-                         curiosity_rew_reduction_mode='mult')
     if exp_name == 'gravity':
         experiment_setup('gravity',
                          env=env,
@@ -554,24 +506,6 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          freeze_after_ep=10000,
                          verbose=verbose,
                          test_episodes=100,
-                         re_init_epsilon=True,
-                         initial_epsilon=0.9,
-                         alergia_epsilon=0.05,
-                         alergia_model_type=model_type,
-                         curiosity_reward=5,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'gravity2':
-        experiment_setup('gravity2',
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=20000,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=10000,
-                         verbose=verbose,
-                         test_episodes=100,
                          initial_epsilon=0.9,
                          re_init_epsilon=True,
                          alergia_model_type=model_type,
@@ -580,108 +514,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
-    if exp_name == 'big_office_one_time_rew' or exp_name == 'big_office_permanent_rew':
-        experiment_setup(exp_name,
-                         env=env,
-                         num_training_episodes=30000,
-                         update_interval=2000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=16000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=True,
-                         alergia_model_type=model_type,
-                         curiosity_reward=10,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'misleading_office_one_time':
-        experiment_setup('misleading_office_one_time',
-                         env=env,
-                         num_training_episodes=40000,
-                         update_interval=2000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=20000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         alergia_epsilon=0.1,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=True,
-                         alergia_model_type=model_type,
-                         curiosity_reward=10,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'corridor-rew':
-        experiment_setup('corridor-rew',
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=30000,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=12000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=True,
-                         alergia_model_type=model_type,
-                         curiosity_reward=None,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'corridor_one_time_rew':
-        experiment_setup('corridor_one_time_rew',
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=30000,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=12000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=True,
-                         alergia_model_type=model_type,
-                         curiosity_reward=None,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'corner':
-        experiment_setup('corner',
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=30000,
-                         update_interval=2000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=12000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.6,
-                         re_init_epsilon=False,
-                         alergia_model_type=model_type,
-                         curiosity_reward=5,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'thin_maze' or exp_name == 'maze':
-        experiment_setup(exp_name,
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=30000,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=12000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.9,
-                         re_init_epsilon=False,
-                         alergia_model_type=model_type,
-                         curiosity_reward=5,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
-    if exp_name == 'simple_showcase' or exp_name == 'simple_showcase2':
+    if exp_name == 'thinMaze':
         experiment_setup(exp_name,
                          env=env,
                          initial_sample_num=10000,
@@ -699,25 +532,8 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          curiosity_reward_reduction=0.9,
                          curiosity_rew_reduction_mode='mult'
                          )
-    if exp_name == 'minecraft' or exp_name == 'mid_line':
-        experiment_setup(exp_name,
-                         env=env,
-                         initial_sample_num=10000,
-                         num_training_episodes=20000,
-                         update_interval=1000,
-                         early_stopping_threshold=early_stopping_acc,
-                         freeze_after_ep=14000,
-                         verbose=verbose,
-                         test_episodes=100,
-                         initial_epsilon=0.3,
-                         alergia_epsilon=0.1,
-                         re_init_epsilon=True,
-                         alergia_model_type=model_type,
-                         curiosity_reward=10,
-                         curiosity_reward_reduction=0.9,
-                         curiosity_rew_reduction_mode='mult'
-                         )
 
 
 if __name__ == '__main__':
-    poql_experiment('world1_confusing', early_stopping_acc=1, model_type='mdp')
+    if len(sys.argv) == 2:
+        poql_experiment(sys.argv[1], early_stopping_acc=1, model_type='mdp')

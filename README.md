@@ -16,7 +16,7 @@ With a one liner
 ```
 pip install -r recquirements.txt
 ```
-Or install each dependecy individually in case if you want to use your GPU for comparison.
+Or install each dependency individually in case if you want to use your GPU for comparison.
 ```
 pip install aalpy
 pip install stable-baselines
@@ -25,10 +25,13 @@ pip install numpy==1.16.4
 pip install gym==0.15.7
 ```
 
-## Comparison With LSTM-based policies and MlpPolicy with Frame stacking
-Run comparison by defining the experiment in the bottom of the appropriate file and calling
+## Run experiment
+To run each experiment, simply call call the appropriate python script with experiment name.
+Experiment names found in paper are `oficeWorld`, `confusingOfficeWorld`, `gravity`, `thinMaze`.
+
 ```
-python reccurent_policy_comp.py
-python stacked_frames_comp.py
+python partially_observable_q_learning.py <exp_name>
+python reccurent_policy_comp.py <exp_name>
+python stacked_frames_comp.py <exp_name>
 ```
 ``

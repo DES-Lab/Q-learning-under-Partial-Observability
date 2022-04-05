@@ -12,10 +12,10 @@ force_determinism = False
 # the underlying system to behave like deterministic MDP.
 indicate_slip = False
 # Use abstraction/partial observability. If set to False, (x,y) coordinates will be used as outputs
-is_partially_obs = False
+is_partially_obs = True
 # If one_time_rewards is set to True, reward in single location will be obtained only once per episode.
 # Otherwise, reward will be given every time
-one_time_rewards = False
+one_time_rewards = True
 
 env = gym.make(id='poge-v1',
                world_file_path='worlds/world1.txt',
@@ -25,15 +25,12 @@ env = gym.make(id='poge-v1',
                one_time_rewards=one_time_rewards,
                step_penalty=0.1)
 
-env = CookieDomain()
-
 q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
 # Hyper parameters
 alpha = 0.1
-gamma = 0.6
+gamma = 0.9
 epsilon = 0.1
-
 
 num_training_episodes = 10000
 
@@ -74,8 +71,6 @@ episodes = 100
 
 goals_reached = 0
 
-coordinates_list = []
-
 for _ in range(episodes):
     state = env.reset()
     penalties, reward = 0, 0
@@ -94,10 +89,6 @@ for _ in range(episodes):
 
         total_steps += 1
 
-    coordinates_list.append(episode_locations)
-
 print(f"Results after {episodes} episodes:")
 print(f"Total Number of Goal reached: {goals_reached}")
 print(f"Average timesteps per episode: {total_steps / episodes}")
-
-#visualize_episode(env, coordinates_list[0])

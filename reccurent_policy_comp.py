@@ -108,9 +108,9 @@ def lstm_experiment(experiment_name, poge, learning_alg, training_steps, interva
 
 
 if __name__ == '__main__':
-    exp = 'world1'
-    num_training_episodes = 10000
-    env = get_world(exp)
+    if len(sys.argv) == 2:
+        exp = sys.argv[1]
+        num_training_episodes = 30000
+        env = get_world(exp)
 
-    # https://github.com/hill-a/stable-baselines/issues/646 Shows that it is simply slow, at least my understanding.
-    lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len)
+        lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len, early_stopping_acc=1)

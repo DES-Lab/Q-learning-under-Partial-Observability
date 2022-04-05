@@ -62,9 +62,9 @@ def get_small_pomdp():
     return Mdp(q0, [q0, q1, q2, q3, q4])
 
 
-mdp = get_counter_pomdp()
-input_al = mdp.get_input_alphabet()
-sul = MdpSUL(mdp)
+pomdp = get_counter_pomdp()
+input_al = pomdp.get_input_alphabet()
+sul = MdpSUL(pomdp)
 
 
 def passive():
@@ -93,4 +93,6 @@ def active():
 
 
 if __name__ == '__main__':
+    visualize_automaton(pomdp)
     passive()
+    # active()

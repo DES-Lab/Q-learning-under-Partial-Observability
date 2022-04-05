@@ -6,15 +6,16 @@ from stacked_frames_comp import stacked_experiment
 from world_repository import get_world, get_all_world_ids
 
 # world_ids = get_all_world_ids()
-world_ids = ['world1', 'world1_confusing', 'simple_showcase2', 'gravity2']
+world_ids = ['officeWorld', 'world1_confusing', 'simple_showcase2', 'gravity2']
 # repeat each experiment repeat_each times
 repeat_each = 2
 # print additional info during each experiment
 verbose = False
 # put to 0.98 if you want to stop when goal is reached in 98% of test episodes
 early_stopping_acc = 1.0
-#
-num_ep = 25000
+# number of training episodes
+num_ep = 300000
+
 
 def run_poql_experiments():
     num_runs = len(world_ids) * repeat_each * 2
@@ -45,7 +46,7 @@ def run_stacked_experiments():
 
 
 def run_lstm_experiments():
-    algs = [ACER, A2C, ACKTR] # PPO2
+    algs = [ACER, A2C, ACKTR]  # PPO2
     num_runs = len(algs) * len(world_ids) * repeat_each
     i = 0
     for w in world_ids:
@@ -60,6 +61,6 @@ def run_lstm_experiments():
 
 
 if __name__ == '__main__':
-    # run_poql_experiments()
+    run_poql_experiments()
     run_stacked_experiments()
     run_lstm_experiments()
