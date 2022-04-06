@@ -147,3 +147,6 @@ if __name__ == '__main__':
 
         stacked_experiment(exp, poge, ACKTR, training_steps=num_training_episodes * poge.max_ep_len, num_frames=frame_size,
                            verbose=True, early_stopping_acc=1)
+    else:
+        print("Pass one of the following arguments to the script to run the experiment:\n  "
+              "{gravity, officeWorld, confusingOfficeWorld, thinMaze}")

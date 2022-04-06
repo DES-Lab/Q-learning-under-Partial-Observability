@@ -506,7 +506,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
                          freeze_after_ep=10000,
                          verbose=verbose,
                          test_episodes=100,
-                         initial_epsilon=0.9,
+                         initial_epsilon=0.3,
                          re_init_epsilon=True,
                          alergia_model_type=model_type,
                          alergia_epsilon=0.05,
@@ -536,4 +536,7 @@ def poql_experiment(exp_name, early_stopping_acc=1.01, model_type='mdp', verbose
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
-        poql_experiment(sys.argv[1], early_stopping_acc=1, model_type='mdp')
+        poql_experiment(sys.argv[1], early_stopping_acc=1, model_type='mdp', verbose=True)
+    else:
+        print("Pass one of the following arguments to the script to run the experiment:\n  "
+              "{gravity, officeWorld, confusingOfficeWorld, thinMaze}")

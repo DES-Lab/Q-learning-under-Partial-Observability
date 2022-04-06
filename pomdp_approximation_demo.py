@@ -63,6 +63,7 @@ def get_small_pomdp():
 
 
 pomdp = get_counter_pomdp()
+visualize_automaton(pomdp)
 input_al = pomdp.get_input_alphabet()
 sul = MdpSUL(pomdp)
 
@@ -93,6 +94,5 @@ def active():
 
 
 if __name__ == '__main__':
-    visualize_automaton(pomdp, path='POMDP')
     passive()
     # active()

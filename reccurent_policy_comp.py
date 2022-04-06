@@ -113,4 +113,7 @@ if __name__ == '__main__':
         num_training_episodes = 30000
         env = get_world(exp)
 
-        lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len, early_stopping_acc=1)
+        lstm_experiment(exp, env, ACER, num_training_episodes * env.max_ep_len, early_stopping_acc=1, verbose=True)
+    else:
+        print("Pass one of the following arguments to the script to run the experiment:\n  "
+              "{gravity, officeWorld, confusingOfficeWorld, thinMaze}")

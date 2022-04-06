@@ -1,3 +1,10 @@
+# Reinforcement Learning under Partial Observability Guided by Learned Environment Models
+
+POQ-learning is a method of finding a policy in partially observable environments. It uses IoAlergia to approximate the underlying
+POMDP and with the learned model it extends the state space.
+
+This repository containing implementation of POQ-learning and experiments found in the paper.
+
 ## Installation Process
 Due to the older version of tensorflow reacquired by stable baselines v.2, ensure that you have Python 3.6 installed.
 Note that our algorithm works with Python 3.6 and newer versions, but for the sake of comparison use Python3.6.
@@ -28,7 +35,7 @@ pip install gym==0.15.7
 To make Alergia faster, we interface to [jAlergia](https://github.com/emuskardin/jAlergia/tree/master) with AALpy.
 Ensure that you have java added to the path.
 If you have Java >= 12, provided `alergia.jar` should work out of the box.
-If you have lower version of Java added to your path, please compile your own .jar file and replace the one present in the reposatory.
+If you have lower version of Java added to your path , please compile your own .jar file and replace the one present in the reposatory.
 ```
 git clone https://github.com/emuskardin/jAlergia
 gradlew jar
@@ -44,6 +51,8 @@ python pomdp_approximation_demo.py
 ## Run experiments
 To run each experiment, simply call call the appropriate python script with experiment name.
 Experiment names found in paper are `oficeWorld`, `confusingOfficeWorld`, `gravity`, `thinMaze`.
+Due to stochasicity inherent in the environment and in reinforcement learning, run each experiments multiple times to
+obtain a better picture and more optimal results.
 
 ```
 python partially_observable_q_learning.py <exp_name>
