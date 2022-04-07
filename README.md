@@ -1,9 +1,9 @@
 # Reinforcement Learning under Partial Observability Guided by Learned Environment Models
 
-POQ-learning is a method of finding a policy in partially observable environments. It uses IoAlergia to approximate the underlying
+Q^A-learning is a method of finding a policy in partially observable environments. It uses IoAlergia to approximate the underlying
 POMDP and with the learned model it extends the state space.
 
-This repository containing implementation of POQ-learning and experiments found in the paper.
+This repository containing implementation of Q^A-learning and experiments found in the paper.
 
 ## Installation Process
 Due to the older version of tensorflow reacquired by stable baselines v.2, ensure that you have Python 3.6 installed.
